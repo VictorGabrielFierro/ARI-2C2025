@@ -3,5 +3,5 @@ Repositorio grupal para el desarrollo del taller obligatorio de la materia Almac
 
 Integrantes:
 - Victor Gabriel Fierro, LU:369/23
--
+- Nicolas Ansaldi, LU: 128/14
 -
