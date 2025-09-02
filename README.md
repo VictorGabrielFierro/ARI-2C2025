@@ -2,7 +2,7 @@
 Repositorio grupal para el desarrollo del taller obligatorio de la materia Almacenamiento y Recuperación de la Información - FCEN UBA
 
 Integrantes:
-- Victor Gabriel Fierro, LU:369/23
-- Nicolas Ansaldi, LU: 128/14
-- Romero Manuel, LU:665/23
--
+- Victor Gabriel Fierro, LU: 369/23
+- Nicolás Ansaldi, LU: 128/14
+- Manuel Romero, LU: 665/23
+- Guillermo Francisco Cozza, LU: 560/23
