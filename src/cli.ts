@@ -1,32 +1,24 @@
 import sql from 'mssql';
-import { readFile } from 'fs/promises';
-import path from 'path';
+import fs from 'fs/promises';
+import dbConfigAdmin from './db-config-admin.js'; 
 
 async function main() {
-  const config = {
-    user: 'aida_admin',
-    password: 'Admin2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-      encrypt: true,
-      trustServerCertificate: true
-    }
-  };
+  // Conectarse al SQL Server
+  const pool = await sql.connect(dbConfigAdmin);
 
   try {
-    // Conectarse al SQL Server
-    await sql.connect(config);
-
     // Leer el CSV
-    const contents = await readFile('recursos/alumnos.csv', 'utf8');
+    const contents = await fs.readFile('recursos/alumnos.csv', 'utf8');
     const header = contents.split(/\r?\n/)[0];
-    const columns = header.split(',').map(c => c.trim());
-    const dataLines = contents.split(/\r?\n/).slice(1).filter(l => l.trim() !== '');
+    if (!header) {
+      throw new Error('El archivo CSV está vacío');
+    }
+    // const columns = header.split(',').map((c: string) => c.trim());
+    const dataLines = contents.split(/\r?\n/).slice(1).filter((l: string) => l.trim() !== '');
 
     // Insertar cada fila usando parámetros
     for (const line of dataLines) {
-      const values = line.split(',').map(v => v === '' ? null : v);
+      const values = line.split(',').map((v: string) => v === '' ? null : v);
 
       await new sql.Request()
         .input('lu', sql.VarChar, values[0])
@@ -50,7 +42,7 @@ async function main() {
   } catch (err) {
     console.error('Error conectando o ejecutando el script:', err);
   } finally {
-    await sql.close();
+    await pool.close();
   }
 }
 

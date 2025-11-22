@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+package-lock.json
+
+# Archivos de entorno / secretos
+*.bat
+*.env
+local-*.bat
+*-local
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Bases de datos locales
+*.mdf
+*.ldf
+
+# Compilados TypeScript
+dist/
+
+# Archivos generados
+certificados/
