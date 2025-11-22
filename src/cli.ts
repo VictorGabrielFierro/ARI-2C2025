@@ -1,49 +1,65 @@
-import sql from 'mssql';
-import fs from 'fs/promises';
-import dbConfigAdmin from './db-config-admin.js'; 
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { iniciarModoCarga } from "./modoCarga.js";
+import { iniciarModoFecha } from "./modoFecha.js";
+import { iniciarModoLU } from "./modoLU.js";
+
+function mostrarModosAlUsuario(){
+    console.log('Para modo CARGA ingrese: 1');
+    console.log('Para modo FECHA ingrese: 2');
+    console.log('Para modo LU    ingrese: 3');
+}
+
+async function solicitarSeleccionDeModoAlUsuario(){
+    const rl = readline.createInterface({ input, output });
+    
+    let modoSeleccionado: number | null = null;
+    while (modoSeleccionado === null) {
+        const modo = await rl.question("Ingrese un modo: ");
+        console.log('\n')
+        switch (modo) {
+        case '1':
+            modoSeleccionado = 1;
+            console.log('Usted ha seleccionado el modo: CARGA');
+            break;
+        case '2':
+            modoSeleccionado = 2;
+            console.log('Usted ha seleccionado el modo: FECHA');
+            break;
+        case '3':
+            modoSeleccionado = 3;
+            console.log('Usted ha seleccionado el modo: LU   ');
+            break;
+        default:
+            console.log('El modo seleccionado no existe. Por favor seleccione entre las opciones:');
+            mostrarModosAlUsuario();
+            break;
+        }
+    }
+
+    rl.close();
+    return modoSeleccionado
+}
+
 
 async function main() {
-  // Conectarse al SQL Server
-  const pool = await sql.connect(dbConfigAdmin);
+    console.log('Bienvenido. Para comenzar indique un modo de uso.');
+    mostrarModosAlUsuario();
 
-  try {
-    // Leer el CSV
-    const contents = await fs.readFile('recursos/alumnos.csv', 'utf8');
-    const header = contents.split(/\r?\n/)[0];
-    if (!header) {
-      throw new Error('El archivo CSV está vacío');
+    const modoSeleccionado = await solicitarSeleccionDeModoAlUsuario();
+    switch (modoSeleccionado) {
+        case 1:
+            iniciarModoCarga();
+            break;
+        case 2:
+            iniciarModoFecha(); 
+            break;
+        case 3:
+            iniciarModoLU();
+            break;
+        default:
+            break;
     }
-    // const columns = header.split(',').map((c: string) => c.trim());
-    const dataLines = contents.split(/\r?\n/).slice(1).filter((l: string) => l.trim() !== '');
-
-    // Insertar cada fila usando parámetros
-    for (const line of dataLines) {
-      const values = line.split(',').map((v: string) => v === '' ? null : v);
-
-      await new sql.Request()
-        .input('lu', sql.VarChar, values[0])
-        .input('apellido', sql.VarChar, values[1])
-        .input('nombres', sql.VarChar, values[2])
-        .input('titulo', sql.VarChar, values[3])
-        .input('titulo_en_tramite', sql.Date, values[4])
-        .input('egreso', sql.Date, values[5])
-        .query(`
-          INSERT INTO aida.alumnos (lu, apellido, nombres, titulo, titulo_en_tramite, egreso)
-          VALUES (@lu, @apellido, @nombres, @titulo, @titulo_en_tramite, @egreso)
-        `);
-
-      console.log(`Insertada fila LU=${values[0]}`);
-    }
-
-    // Mostrar tabla completa
-    const result = await new sql.Request().query('SELECT * FROM aida.alumnos');
-    console.log('Contenido de la tabla alumnos:', result.recordset);
-
-  } catch (err) {
-    console.error('Error conectando o ejecutando el script:', err);
-  } finally {
-    await pool.close();
-  }
 }
 
 main();

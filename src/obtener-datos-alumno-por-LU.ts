@@ -1,24 +1,23 @@
 import sql from 'mssql';
-import dbConfigAdmin from './db-config-admin.js';
+import dbConfigAdmin from './aida-config-admin.js';
 
 
-export async function obtenerDatosAlumno(lu: string) {
+export async function obtenerDatosAlumnoPorLU(lu: string) {
     // Conectarse al SQL Server
     const pool = await sql.connect(dbConfigAdmin);
     
     try {
     // Obtener el alumno
-    const result = await pool.request()
+    const alumno = await pool.request()
         .input('lu', sql.VarChar, lu)
         .query('SELECT * FROM aida.alumnos WHERE lu = @lu');
     
     // Verificar que se encontro el alumno
-    if (result.recordset.length === 0) {
+    if (alumno.recordset.length === 0) {
         console.log(`No se encontró alumno con LU=${lu}`);
         return;
     }
-    
-    return result.recordset[0]; // devolver objeto alumno
+    return alumno.recordset[0]; // devolver objeto alumno
 
     
   } catch (err) {
