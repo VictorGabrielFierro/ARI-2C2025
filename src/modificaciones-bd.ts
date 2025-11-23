@@ -1,6 +1,7 @@
 import sql from 'mssql';
 import fs from 'fs/promises';
 import dbConfigAdmin from './aida-config-admin.js'; 
+import { Alumno } from "./tipos/index.js";
 import { ERRORES } from './constantes/errores.js';
 
 export async function cargarCSV(ruta: string){
@@ -80,6 +81,69 @@ export async function cargarJSON(alumnos: any[]) {
             throw err; // Re-lanzás el mismo error
         }
         throw new Error(ERRORES.INTERNO);
+    } finally {
+        await pool.close();
+    }
+}
+
+export async function eliminarAlumnoPorLU(lu: string) {
+    // Conectarse al SQL Server
+    const pool = await sql.connect(dbConfigAdmin);
+    
+    try {
+        // Eliminar el alumno
+        const result = await pool.request()
+            .input('lu', sql.NVarChar, lu)
+            .query('DELETE FROM aida.alumnos WHERE lu = @lu');
+
+        
+        // Opcional: verificar cuántas filas se borraron
+        if (result.rowsAffected[0] === 0) {
+            throw new Error(ERRORES.ALUMNO_NO_ENCONTRADO);
+        }
+        
+    } catch (error:any) {
+        if (error.message === ERRORES.ALUMNO_NO_ENCONTRADO) {
+            throw error; // Re-lanzás el mismo error
+        }
+        throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
+    } finally {
+        await pool.close();
+    }
+}
+
+export async function insertarAlumno(alumno: Alumno) {
+    const pool = await sql.connect(dbConfigAdmin);
+
+    try {
+        const result = await pool.request()
+            .input("lu", sql.NVarChar(50), alumno.lu)
+            .input("apellido", sql.NVarChar(50), alumno.apellido)
+            .input("nombres", sql.NVarChar(50), alumno.nombres)
+            .input("titulo", sql.NVarChar(100), alumno.titulo || null)
+            .input("titulo_en_tramite", sql.Date, alumno.titulo_en_tramite || null)
+            .input("egreso", sql.Date, alumno.egreso || null)
+            .query(`
+                INSERT INTO aida.alumnos 
+                (lu, apellido, nombres, titulo, titulo_en_tramite, egreso)
+                VALUES (@lu, @apellido, @nombres, @titulo, @titulo_en_tramite, @egreso)
+            `);
+
+        // Si se insertó correctamente
+        if (result.rowsAffected[0] === 0) {
+            throw new Error(ERRORES.FALLA_AL_CARGAR_DATOS);
+        }
+
+    } catch (error: any) {
+        // Si la LU ya existe (clave primaria duplicada)
+        if (error.number === 2627) {  // Código de error SQL Server para PK duplicada
+            throw new Error(ERRORES.LU_DUPLICADA);
+        }
+        if (error.message === ERRORES.FALLA_AL_CARGAR_DATOS) {
+            throw error; // Re-lanzás el mismo error
+        }
+        throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
+
     } finally {
         await pool.close();
     }

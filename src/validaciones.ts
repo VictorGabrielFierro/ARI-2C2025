@@ -61,3 +61,12 @@ export async function validarCSV(carpetaBase: string, nombre: string): Promise<s
     // Todo OK
     return archivoAbsoluto;
 }
+
+// Validar nombre, apellido, título: puede ser varias palabras separadas por espacios, solo letras
+export function validarNombreApellidoTitulo(valor: string | null): boolean {
+    if (valor === null) return true; // Permitir nulo
+    const titulo = valor.trim();
+    if (!titulo) return false; // No vacío
+    // Permite varias palabras separadas por un espacio, solo letras
+    return /^([A-Za-z]+ ?)+$/.test(titulo);
+}

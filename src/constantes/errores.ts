@@ -11,4 +11,10 @@ export const ERRORES = {
   FALLA_AL_GENERAR_CERTIFICADO: 'Error al generar el certificado',
   CERTIFICADO_NO_GENERADO: 'No se pudo generar el certificado',
   FALLA_AL_CARGAR_DATOS: 'No se pudieron cargar los datos',
+  APELLIDO_INVALIDO: 'Apellido invalido',
+  NOMBRES_INVALIDOS: 'Nombres invalidos',
+  TITULO_INVALIDO: 'Titulo invalido',
+  TITULO_EN_TRAMITE_INVALIDO: 'Titulo en tramite invalido',
+  EGRESO_INVALIDO: 'Egreso Invalido',
+  LU_DUPLICADA: 'La LU ingresada ya se encuentra en uso'
 };
