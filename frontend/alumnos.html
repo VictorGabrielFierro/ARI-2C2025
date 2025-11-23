@@ -173,7 +173,7 @@
     <div class="main-container">
         <div class="menu">
             <button onclick="abrirModalCrear()">Crear Alumno</button>
-            <button onclick="abrirModalLUEditar()">Editar Alumno</button>
+            <button onclick="abrirModalEditar()">Editar Alumno</button>
             <button onclick="abrirModalEliminar()">Eliminar Alumno</button>
             <button onclick="window.location.href='index.html'">Volver al menú</button>
         </div>
@@ -263,17 +263,38 @@
         <div class="modal-content">
             <span id="cerrarModalEditar" class="cerrar">&times;</span>
             <h3>Editar Alumno</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px;">
-                <input type="text" id="editarApellido" placeholder="Apellido" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; flex: 1 1 150px;">
-                <input type="text" id="editarNombres" placeholder="Nombres" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; flex: 1 1 150px;">
-                <input type="text" id="editarTitulo" placeholder="Título" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; flex: 1 1 150px;">
-                <input type="date" id="editarTituloTramite" placeholder="Título en trámite" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; flex: 1 1 150px;">
-                <input type="date" id="editarEgreso" placeholder="Egreso" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; flex: 1 1 150px;">
-            </div>
-            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                <button onclick="actualizarAlumno()" style="padding: 10px 20px; border-radius: 8px; border: none; background-color: #2ecc71; color: white; font-weight: bold; cursor: pointer; transition: background-color 0.2s;">Guardar</button>
-            </div>
-            <p id="mensajeModalEditar" class="mensaje" style="margin-top: 10px;"></p>
+            <form id="formEditarAlumno">
+                <div>
+                    <label for="luViejoInput">LU Vieja:</label>
+                    <input type="text" id="luViejoInput" required>
+                </div>
+                <div>
+                    <label for="luNuevoInput">LU Nueva:</label>
+                    <input type="text" id="luNuevoInput" required>
+                </div>
+                <div>
+                    <label for="apellidoEditarInput">Apellido:</label>
+                    <input type="text" id="apellidoEditarInput" required>
+                </div>
+                <div>
+                    <label for="nombresEditarInput">Nombres:</label>
+                    <input type="text" id="nombresEditarInput" required>
+                </div>
+                <div>
+                    <label for="tituloEditarInput">Título:</label>
+                    <input type="text" id="tituloEditarInput">
+                </div>
+                <div>
+                    <label for="tituloTramiteEditarInput">Título en trámite:</label>
+                    <input type="date" id="tituloTramiteEditarInput">
+                </div>
+                <div>
+                    <label for="egresoEditarInput">Egreso:</label>
+                    <input type="date" id="egresoEditarInput">
+                </div>
+                <button type="submit">Actualizar Alumno</button>
+            </form>
+            <p id="mensajeModalEditar" class="mensaje"></p>
         </div>
     </div>
 
@@ -397,74 +418,88 @@
             }
         }
 
-        // Abrir modal de LU para editar
-        function abrirModalLUEditar() {
-            document.getElementById("modalLUEditar").style.display = "flex";
+        // --- Abrir/Cerrar modal ---
+        function abrirModalEditar() {
+            document.getElementById("modalEditar").style.display = "flex";
         }
 
-        // Cerrar modal de LU
-        document.getElementById("cerrarModalLUEditar").onclick = function() {
-            document.getElementById("modalLUEditar").style.display = "none";
-        };
-
-        // Cerrar modal de editar
         document.getElementById("cerrarModalEditar").onclick = function() {
             document.getElementById("modalEditar").style.display = "none";
         };
 
-        // Verificar LU ingresado
-        async function verificarLUEditar() {
-            const lu = document.getElementById("luEditarInput").value.trim();
-            const mensajeDiv = document.getElementById("mensajeModalLUEditar");
-            if (!lu) {
-                mensajeDiv.textContent = "Ingrese un LU válido.";
+        window.onclick = function(event) {
+            if (event.target === document.getElementById("modalEditar")) {
+                document.getElementById("modalEditar").style.display = "none";
+            }
+        };
+
+        // --- Verificar LU vieja y cargar datos ---
+        async function cargarAlumnoParaEditar() {
+            const luVieja = document.getElementById("luViejoInput").value.trim();
+            const mensajeDiv = document.getElementById("mensajeModalEditar");
+
+            if (!luVieja) {
+                mensajeDiv.style.color = "red";
+                mensajeDiv.textContent = "Ingrese LU válida.";
                 return;
             }
 
             try {
-                const res = await fetch(`/api/v0/alumnos/${encodeURIComponent(lu)}`);
-                if (!res.ok) throw new Error("Alumno no encontrado");
-                const alumno = await res.json();
+                const res = await fetch(`/api/v0/alumno/${encodeURIComponent(luVieja)}`);
+                const data = await res.json();
 
-                // Cargar datos en modal de edición
-                document.getElementById("editarApellido").value = alumno.apellido || '';
-                document.getElementById("editarNombres").value = alumno.nombres || '';
-                document.getElementById("editarTitulo").value = alumno.titulo || '';
-                document.getElementById("editarTituloTramite").value = alumno.titulo_en_tramite ? alumno.titulo_en_tramite.split('T')[0] : '';
-                document.getElementById("editarEgreso").value = alumno.egreso ? alumno.egreso.split('T')[0] : '';
+                if (!res.ok) {
+                    mensajeDiv.style.color = "red";
+                    mensajeDiv.textContent = data.error || "Error al buscar alumno.";
+                    return;
+                }
 
-                // Cerrar modal de LU y abrir modal de edición
-                document.getElementById("modalLUEditar").style.display = "none";
-                document.getElementById("modalEditar").style.display = "flex";
+                // Cargar datos en el formulario
+                document.getElementById("luNuevoInput").value = data.lu || "";
+                document.getElementById("apellidoEditarInput").value = data.apellido || "";
+                document.getElementById("nombresEditarInput").value = data.nombres || "";
+                document.getElementById("tituloEditarInput").value = data.titulo || "";
+                document.getElementById("tituloTramiteEditarInput").value = data.titulo_en_tramite ? data.titulo_en_tramite.split('T')[0] : "";
+                document.getElementById("egresoEditarInput").value = data.egreso ? data.egreso.split('T')[0] : "";
+
+                mensajeDiv.textContent = "";
             } catch (err) {
-                mensajeDiv.textContent = "Alumno no encontrado.";
+                mensajeDiv.style.color = "red";
+                mensajeDiv.textContent = "Error de conexión con el servidor.";
+                console.error(err);
             }
         }
-
-        // Función para actualizar alumno
-        async function actualizarAlumno() {
-            const lu = document.getElementById("luEditarInput").value.trim();
-            const alumnoActualizado = {
-                apellido: document.getElementById("editarApellido").value.trim(),
-                nombres: document.getElementById("editarNombres").value.trim(),
-                titulo: document.getElementById("editarTitulo").value.trim(),
-                titulo_en_tramite: document.getElementById("editarTituloTramite").value,
-                egreso: document.getElementById("editarEgreso").value
-            };
+        // --- Actualizar Alumno ---
+        document.getElementById("formEditarAlumno").onsubmit = async function(e) {
+            e.preventDefault();
             const mensajeDiv = document.getElementById("mensajeModalEditar");
 
+            const alumnoActualizado = {
+                luNuevo: document.getElementById("luNuevoInput").value.trim(),
+                apellido: document.getElementById("apellidoEditarInput").value.trim(),
+                nombres: document.getElementById("nombresEditarInput").value.trim(),
+                titulo: document.getElementById("tituloEditarInput").value.trim() || null,
+                titulo_en_tramite: document.getElementById("tituloTramiteEditarInput").value || null,
+                egreso: document.getElementById("egresoEditarInput").value || null
+            };
+
+            const luVieja = document.getElementById("luViejoInput").value.trim();
+
             try {
-                const res = await fetch(`/api/v0/alumnos/${encodeURIComponent(lu)}`, {
+                const res = await fetch(`/api/v0/alumno/${encodeURIComponent(luVieja)}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(alumnoActualizado)
                 });
 
                 const data = await res.json();
+
                 if (res.ok) {
                     mensajeDiv.style.color = "green";
                     mensajeDiv.textContent = data.mensaje;
                     cargarAlumnos();
+                    document.getElementById("formEditarAlumno").reset();
+                    document.getElementById("modalEditar").style.display = "none";
                 } else {
                     mensajeDiv.style.color = "red";
                     mensajeDiv.textContent = data.error;
@@ -472,6 +507,7 @@
             } catch (err) {
                 mensajeDiv.style.color = "red";
                 mensajeDiv.textContent = "Error al actualizar alumno.";
+                console.error(err);
             }
         }
 

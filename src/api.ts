@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { generarTituloPorFecha, generarTituloPorLU } from './certificados.js';
 import { validarFecha, validarLU, validarNombreApellidoTitulo } from "./validaciones.js";
 import { carpetaDelArchivoActual } from "./utils.js";
-import { cargarJSON, eliminarAlumnoPorLU, insertarAlumno } from "./modificaciones-bd.js";
+import { cargarJSON, eliminarAlumnoPorLU, insertarAlumno, editarAlumno } from "./modificaciones-bd.js";
 import { obtenerTablaAlumnos } from "./consultas-bd.js"
 import { ResultadoRespuesta } from "./tipos/index.js";
 import path from 'path';
@@ -173,17 +173,6 @@ app.get("/api/v0/alumnos", async (_: Request, res: Response) => {
     }
 });
 
-// // Crear un alumno
-// app.get("/api/v0/alumnos", async (_: Request, res: Response) => {
-//     try {
-//         const alumnos = await obtenerTablaAlumnos(); 
-//         res.json(alumnos); 
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: "Error interno del servidor" });
-//     }
-// });
-
 
 // Eliminar un alumno
 app.delete("/api/v0/alumnos/:lu", async (req: Request, res: Response) => {
@@ -269,3 +258,104 @@ app.post("/api/v0/alumno", async (req: Request, res: Response) => {
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 });
+
+// Editar un alumno
+app.put("/api/v0/alumno/:lu", async (req: Request, res: Response) => {
+    const { lu } = req.params;  // LU vieja
+    const { luNuevo, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;
+
+    // Validar LU vieja
+    if (!lu || !validarLU(lu)) {
+        return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+    }
+
+    // SACAR ESTE CODIGO REPETIDO
+    // Validar campos obligatorios
+    if (!validarLU(luNuevo)) {
+        return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+    }
+    if (!validarNombreApellidoTitulo(apellido)) {
+        return res.status(400).json({ error: ERRORES.APELLIDO_INVALIDO });
+    }
+    if (!validarNombreApellidoTitulo(nombres)) {
+        return res.status(400).json({ error: ERRORES.NOMBRES_INVALIDOS });
+    }
+    if (titulo && !validarNombreApellidoTitulo(titulo)) {
+        return res.status(400).json({ error: ERRORES.TITULO_INVALIDO }); // puede ser null
+    }
+    if (titulo_en_tramite && !validarFecha(titulo_en_tramite)) {  // puede ser null
+        return res.status(400).json({ error: ERRORES.TITULO_EN_TRAMITE_INVALIDO });
+    }
+    if (egreso && !validarFecha(egreso)) {  // puede ser null
+        return res.status(400).json({ error: ERRORES.EGRESO_INVALIDO });
+    }
+    try {
+        await editarAlumno({ 
+            luViejo: lu.trim(),
+            luNuevo,
+            apellido,
+            nombres,
+            titulo,
+            titulo_en_tramite,
+            egreso,
+        });
+
+        return res.status(200).json({
+            mensaje: EXITOS.ALUMNO_ACTUALIZADO_CORRECTAMENTE,
+        });
+
+    } catch (err: any) {
+        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU() o editarAlumno()
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.LU_DUPLICADA) {
+            return res.status(400).json({ error: mensaje });
+        }
+        if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
+            return res.status(404).json({ error: mensaje });
+        }
+        if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD || mensaje === ERRORES.FALLA_AL_CARGAR_DATOS) {
+            return res.status(500).json({ error: mensaje });
+        }
+        // Otro error inesperado
+        return res.status(500).json({ error: ERRORES.INTERNO });
+    }
+});
+
+// // Obtener un alumno
+// app.get("/api/v0/alumno/:lu", async (req: Request, res: Response) => {
+//     const luParam = req.params.lu;
+
+//     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
+//     if (typeof luParam !== "string" || !luParam.trim()) {
+//         return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+//     }
+
+//     const LU = luParam.trim();
+//     if(!validarLU(LU)){
+//         return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+//     } 
+//     try {
+//         const alumno = await obtenerDatosAlumnoPorLU(LU);
+//         // Devolver los datos del alumno tal como los espera el frontend
+//         return res.json({
+//             lu: alumno.lu,
+//             apellido: alumno.apellido,
+//             nombres: alumno.nombres,
+//             titulo: alumno.titulo,                     // puede ser null
+//             titulo_en_tramite: alumno.titulo_en_tramite, // puede ser null
+//             egreso: alumno.egreso                       // puede ser null
+//         });
+        
+//     } catch (err: any) {
+//         // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU()
+//         const mensaje = err?.message ?? String(err);
+//         if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
+//             return res.status(404).json({ error: mensaje });
+//         }
+//         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
+//             return res.status(500).json({ error: mensaje });
+//         }
+//         // Otro error inesperado
+//         return res.status(500).json({ error: ERRORES.INTERNO });
+//     }
+// });
