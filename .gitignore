@@ -22,4 +22,6 @@ local-*.bat
 dist/
 
 # Archivos generados
-certificados/
+certificados/*
+carpeta-base/salida/*
+carpeta-base/entrada/*

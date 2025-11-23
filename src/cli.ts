@@ -1,8 +1,8 @@
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { iniciarModoCarga } from "./modoCarga.js";
-import { iniciarModoFecha } from "./modoFecha.js";
-import { iniciarModoLU } from "./modoLU.js";
+import { iniciarModoCarga } from "./modos/modoCarga.js";
+import { iniciarModoFecha } from "./modos/modoFecha.js";
+import { iniciarModoLU } from "./modos/modoLU.js";
 
 function mostrarModosAlUsuario(){
     console.log('Para modo CARGA ingrese: 1');
