@@ -53,3 +53,21 @@ export async function obtenerDatosAlumnoPorLU(lu: string) {
         await pool.close();
     }
 }
+
+export async function obtenerTablaAlumnos() {
+    // Conectarse al SQL Server
+    const pool = await sql.connect(dbConfigAdmin);
+    
+    try {
+        // Obtener el alumno
+        const tablaAlumnos = await pool.request()
+            .query('SELECT * FROM aida.alumnos');
+        
+        // Devolver la tabla
+        return tablaAlumnos.recordset;
+    } catch (error:any) {
+        throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
+    } finally {
+        await pool.close();
+    }
+}

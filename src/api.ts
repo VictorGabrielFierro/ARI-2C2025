@@ -3,6 +3,7 @@ import { generarTituloPorFecha, generarTituloPorLU } from './certificados.js';
 import { validarFecha, validarLU } from "./validaciones.js";
 import { carpetaDelArchivoActual } from "./utils.js";
 import { cargarJSON } from "./modificaciones-bd.js";
+import { obtenerTablaAlumnos } from "./consultas-bd.js"
 import { ResultadoRespuesta } from "./tipos/index.js";
 import path from 'path';
 import { ERRORES } from "./constantes/errores.js";
@@ -158,5 +159,16 @@ app.patch("/api/v0/archivo", async (req: Request, res: Response) => {
         }
         // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
+    }
+});
+
+// Obtener alumnos
+app.get("/api/v0/alumnos", async (_: Request, res: Response) => {
+    try {
+        const alumnos = await obtenerTablaAlumnos(); 
+        res.json(alumnos); 
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
 });
