@@ -1,0 +1,159 @@
+import express, { Request, Response } from "express";
+import { generarTituloPorFecha, generarTituloPorLU } from './certificados.js';
+import { validarFecha, validarLU } from "./validaciones.js";
+import { carpetaDelArchivoActual } from "./utils.js";
+import { cargarJSON } from "./modificaciones-bd.js";
+import { ResultadoRespuesta } from "./tipos/index.js";
+import path from 'path';
+import { ERRORES } from "./constantes/errores.js";
+import { EXITOS } from "./constantes/exitos.js";
+
+const app = express();
+const PORT = 3000;
+
+// Middleware para poder recibir JSON en el body
+app.use(express.json());
+
+// Endpoint de prueba
+app.get("/", (_req: Request, res: Response) => {
+    res.send("AIDA API funcionando ✅");
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`Servidor AIDA escuchando en http://localhost:${PORT}`);
+});
+
+// Obtener certificado por LU
+app.get("/api/v0/lu/:lu", async (req: Request, res: Response) => {
+    const luParam = req.params.lu;
+
+    // Verifico que lu no sea undefined, null o vacio y quito espacios al final
+    if (typeof luParam !== "string" || !luParam.trim()) {
+      return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+    }
+
+    const LU = luParam.trim();
+
+    try {
+        if(!validarLU(LU)){
+            return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+        } 
+        // Ruta del archivo a guardar
+        const __dirname = carpetaDelArchivoActual()
+        const salida = path.join(__dirname, '..', 'certificados',);
+        
+        const resultadoTitulo = await generarTituloPorLU(LU, salida);
+        if (resultadoTitulo.error == null) {
+            const respuesta = {
+                mensaje: `${EXITOS.CERTIFICADO_GENERADO_CORRECTAMENTE} LU: ${resultadoTitulo.lu}`,
+                archivo: resultadoTitulo.archivo,
+            };
+            return res.status(200).json(respuesta);
+        } else {
+            // Si ejecuta esto el error se produjo en generarTitulo()
+            switch (resultadoTitulo.error) {
+                case ERRORES.ALUMNO_NO_EGRESADO:
+                    return res.status(400).json({ error: `${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${resultadoTitulo.error}` });
+                case ERRORES.FALLA_AL_GENERAR_CERTIFICADO:
+                    return res.status(400).json({ error: `${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${resultadoTitulo.error}` });
+                default:
+                    // Otro error inesperado
+                    return res.status(500).json({ error: ERRORES.INTERNO });
+            }
+        }
+        
+    } catch (err: any) {
+        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU()
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
+            return res.status(404).json({ error: mensaje });
+        }
+        if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
+            return res.status(500).json({ error: mensaje });
+        }
+        // Otro error inesperado
+        return res.status(500).json({ error: ERRORES.INTERNO });
+    }
+});
+
+// Obtener certificados por fecha
+app.get("/api/v0/fecha/:fecha", async (req: Request, res: Response) => {
+    const fechaPAram = req.params.fecha;
+
+    // Verifico que lu no sea undefined, null o vacio y quito espacios al final
+    if (typeof fechaPAram !== "string" || !fechaPAram.trim()) {
+        return res.status(400).json({ error: ERRORES.FECHA_INVALIDA });
+    }
+    const fecha = fechaPAram.trim();
+    try {
+        if (!validarFecha(fecha)){
+            return res.status(400).json({ error: ERRORES.FECHA_INVALIDA });
+        } 
+        // Ruta de los archivos a guardar
+        const __dirname = carpetaDelArchivoActual()
+        const salida = path.join(__dirname, '..', 'certificados',);
+        
+        const titulos = await generarTituloPorFecha(fecha, salida);
+        const resultadoJSON: ResultadoRespuesta[] = [];
+
+        for (const titulo of titulos) {
+            if (titulo.error == null){
+                resultadoJSON.push({
+                    mensaje: `${EXITOS.CERTIFICADO_GENERADO_CORRECTAMENTE} LU: ${titulo.lu}`,
+                    archivo: titulo.archivo!,
+                });
+            } else {
+                resultadoJSON.push({
+                    mensaje: `${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${titulo.lu}. Descripcion de error: ${titulo.error}`,
+                    archivo: null,
+                });
+            }
+        }
+        return res.status(200).json(resultadoJSON);
+    } catch (err: any) {
+        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorFecha()
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
+            return res.status(404).json({ error: mensaje });
+        }
+        if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
+            return res.status(500).json({ error: mensaje });
+        }
+        // Otro error inesperado
+        return res.status(500).json({ error: ERRORES.INTERNO });
+    }
+    
+});
+
+// Cargar alumnos desde archivo (JSON)
+app.patch("/api/v0/archivo", async (req: Request, res: Response) => {
+    const alumnos = req.body;
+    
+    try {
+        // Verificar que no esté vacío
+        if (!Array.isArray(alumnos) || alumnos.length === 0) {
+            return res.status(400).send({ error: ERRORES.ARCHIVO_INVALIDO });
+        }
+        for (const alumno of alumnos) {
+            if (!alumno.lu || !alumno.apellido || !alumno.nombres) {
+                return res.status(400).json({ error: `${ERRORES.ARCHIVO_INVALIDO}: faltan campos en uno o más registros.` });
+            }
+        }
+
+        // Procesar el JSON
+        await cargarJSON(alumnos);
+
+        // Enviar respuesta exitosa
+        return res.status(200).send({ mensaje: EXITOS.DATOS_CARGADOS_CORRECTAMENTE });
+
+    } catch (err: any) {
+        // Si ejecuta esto el error se produjo en cargarJSON()
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.ARCHIVO_INVALIDO) {
+            return res.status(404).json({ error: mensaje });
+        }
+        // Otro error inesperado
+        return res.status(500).json({ error: ERRORES.INTERNO });
+    }
+});

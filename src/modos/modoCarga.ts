@@ -13,31 +13,27 @@ const carpeta_recursos = path.join(__dirname, '..', 'recursos');
 
 async function solicitarRutaAlArchivoCSV(): Promise<string> {
     const rl = readline.createInterface({ input, output });
-    let rutaValida = false;
-    let ruta: string | null = '';
-
-    while (!rutaValida) {
+    try {
         const nombreCSV = (await rl.question("Ingrese el nombre del CSV: ")).trim();
-        ruta = await validarCSV(carpeta_recursos, nombreCSV)
-        if (ruta != null){
-            rutaValida = true
-        }
+        const ruta = await validarCSV(carpeta_recursos, nombreCSV);
+        return ruta
+    } catch (error) {
+        throw error
+    } finally {
+        rl.close();
     }
-
-    rl.close();
-    return ruta!
 }
 
 async function iniciarModoCarga() {
     console.log('Usted a ingresado al modo CARGA');
-
-    const ruta = await solicitarRutaAlArchivoCSV();
-    console.log('Cargando CSV. Por favor espere.')
+    
     try{
+        const ruta = await solicitarRutaAlArchivoCSV();
+        console.log('Cargando CSV. Por favor espere.')
         await cargarCSV(ruta);
         console.log('CSV cargado con éxito.');
-    } catch(err){
-        console.error('Ocurrió un error al cargar el CSV:', err);
+    } catch(err:any){
+        console.log('Ocurrió un error al cargar el CSV:', err.message);
     }
 }
 

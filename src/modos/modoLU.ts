@@ -4,6 +4,7 @@ import { generarTituloPorLU } from '../certificados.js';
 import { validarLU } from "../validaciones.js";
 import { carpetaDelArchivoActual } from "../utils.js";
 import path from 'path';
+import { ERRORES } from "../constantes/errores.js";
 
 async function solicitarLU(){
     const rl = readline.createInterface({ input, output });
@@ -28,8 +29,16 @@ async function iniciarModoLU() {
     // Ruta del archivo a guardar
     const __dirname = carpetaDelArchivoActual()
     const salida = path.join(__dirname, '..', 'certificados',);
+    try {
+        await generarTituloPorLU(LU, salida);
+    } catch (err:any) {
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
+            console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${mensaje}`)
+        }
+        console.log(`${ERRORES.INTERNO}`)
+    }
     
-    generarTituloPorLU(LU, salida);
 }
 
 export { iniciarModoLU, generarTituloPorLU };

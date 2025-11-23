@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
+import { ERRORES } from './constantes/errores.js';
 
 export function validarFecha(fecha: string): boolean {
     // Patrón: 4 dígitos año, 2 dígitos mes, 2 dígitos día, separados por guiones
@@ -28,11 +29,10 @@ export function validarLU(input: string): boolean {
     return regex.test(input);
 }
 
-export async function validarCSV(carpetaBase: string, nombre: string): Promise<string | null> {
+export async function validarCSV(carpetaBase: string, nombre: string): Promise<string> {
     // 1. Evitar path traversal y rutas absolutas
     if (nombre.includes('..') || path.isAbsolute(nombre)) {
-        console.error('Nombre de archivo inválido');
-        return null;
+        throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
     // 2. Construir ruta absoluta del archivo
@@ -41,27 +41,22 @@ export async function validarCSV(carpetaBase: string, nombre: string): Promise<s
     // 3. Verificar que la ruta final esté dentro de la carpeta base
     const carpetaSegura = path.resolve(carpetaBase);
     if (!archivoAbsoluto.startsWith(carpetaSegura + path.sep)) {
-        console.error('Intento de acceso a ruta no permitida');
-        return null;
+        throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
     // 4. Verificar extensión .csv
     if (path.extname(nombre).toLowerCase() !== '.csv') {
-        console.error('El archivo debe tener extensión .csv');
-        return null;
+        throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
     // 5. Verificar que existe y es un archivo
     try {
         const stats = await fs.stat(archivoAbsoluto);
         if (!stats.isFile()) {
-            console.error('No es un archivo válido');
-            return null;
+            throw new Error(ERRORES.ARCHIVO_INVALIDO)
         }
     } catch (err) {
-        console.log(`Se busco en: ${archivoAbsoluto}`)
-        console.error(`Archivo no encontrado: ${nombre}`);
-        return null;
+        throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
     // Todo OK
