@@ -25,7 +25,6 @@ export function validarFecha(fecha: string): boolean {
 
 export function validarLU(input: string): boolean {
     const regex = /^[1-9][0-9]{0,3}\/[0-9]{2}$/;
-
     return regex.test(input);
 }
 

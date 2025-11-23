@@ -10,4 +10,5 @@ export const ERRORES = {
   FALLA_AL_CONSULTAR_BD: 'Error al consultar la base de datos',
   FALLA_AL_GENERAR_CERTIFICADO: 'Error al generar el certificado',
   CERTIFICADO_NO_GENERADO: 'No se pudo generar el certificado',
+  FALLA_AL_CARGAR_DATOS: 'No se pudieron cargar los datos',
 };

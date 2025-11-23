@@ -10,13 +10,23 @@ import { EXITOS } from "./constantes/exitos.js";
 
 const app = express();
 const PORT = 3000;
+const __dirname = carpetaDelArchivoActual()
+
+// Ruta de los archivos a guardar
+const salida = '/certificados';
 
 // Middleware para poder recibir JSON en el body
 app.use(express.json());
 
-// Endpoint de prueba
-app.get("/", (_req: Request, res: Response) => {
-    res.send("AIDA API funcionando ✅");
+// Servir archivos estáticos desde ../frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+// Servir certificados
+app.use('/certificados', express.static('/home/manu/Escritorio/TallerBasesDeDatos/certificados'));
+
+
+// Para que al abrir http://localhost:3000/ vaya directo a index.html
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Iniciar servidor
@@ -39,9 +49,6 @@ app.get("/api/v0/lu/:lu", async (req: Request, res: Response) => {
         if(!validarLU(LU)){
             return res.status(400).json({ error: ERRORES.LU_INVALIDA });
         } 
-        // Ruta del archivo a guardar
-        const __dirname = carpetaDelArchivoActual()
-        const salida = path.join(__dirname, '..', 'certificados',);
         
         const resultadoTitulo = await generarTituloPorLU(LU, salida);
         if (resultadoTitulo.error == null) {
@@ -90,9 +97,6 @@ app.get("/api/v0/fecha/:fecha", async (req: Request, res: Response) => {
         if (!validarFecha(fecha)){
             return res.status(400).json({ error: ERRORES.FECHA_INVALIDA });
         } 
-        // Ruta de los archivos a guardar
-        const __dirname = carpetaDelArchivoActual()
-        const salida = path.join(__dirname, '..', 'certificados',);
         
         const titulos = await generarTituloPorFecha(fecha, salida);
         const resultadoJSON: ResultadoRespuesta[] = [];
@@ -129,7 +133,6 @@ app.get("/api/v0/fecha/:fecha", async (req: Request, res: Response) => {
 // Cargar alumnos desde archivo (JSON)
 app.patch("/api/v0/archivo", async (req: Request, res: Response) => {
     const alumnos = req.body;
-    
     try {
         // Verificar que no esté vacío
         if (!Array.isArray(alumnos) || alumnos.length === 0) {

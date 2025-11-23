@@ -1,9 +1,7 @@
-import path from 'path';
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { generarTituloPorFecha } from '../certificados.js';
 import { validarFecha } from "../validaciones.js";
-import { carpetaDelArchivoActual } from "../utils.js";
 import { ERRORES } from "../constantes/errores.js";
 import { EXITOS } from "../constantes/exitos.js";
 
@@ -14,7 +12,7 @@ async function solicitarFecha(): Promise<string> {
     while (!fechaValida) {
         let fecha = (await rl.question("Ingrese Fecha aaaa-mm-dd: ")).trim();
         if(!validarFecha(fecha)){
-            console.log('La fecha ingresada no es valida. Por favor intente de nuevo.')
+            console.log(ERRORES.FECHA_INVALIDA)
         } else{
             fechaValida = fecha;
         }
@@ -29,8 +27,7 @@ async function iniciarModoFecha() {
     const fecha = await solicitarFecha();
 
     // Ruta del archivo a guardar
-    const __dirname = carpetaDelArchivoActual()
-    const salida = path.join(__dirname, '..', 'certificados',);
+    const salida = '/certificados'
 
     try {
         const titulos = await generarTituloPorFecha(fecha, salida);
@@ -45,8 +42,9 @@ async function iniciarModoFecha() {
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
             console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} Fecha: ${fecha}. Descripcion de error: ${mensaje}`)
+        } else {
+            console.log(`${ERRORES.INTERNO}`)
         }
-        console.log(`${ERRORES.INTERNO}`)
     }
 }
 

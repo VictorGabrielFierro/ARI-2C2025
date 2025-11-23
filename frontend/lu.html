@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generar Certificado por LU</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-top: 40px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .container {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 400px;
+            margin-top: 30px;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            border-left: 5px solid #2ecc71;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        .error {
+            background-color: #fdecea;
+            border-left: 5px solid #e74c3c;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generar certificado por LU</h1>
+
+    <div class="container" id="container">
+        <input type="text" id="luInput" placeholder="Ingrese el LU del alumno" />
+        <div>
+        <button id="generarBtn">Generar</button>
+        <button onclick="window.location.href='index.html'">Volver al menú</button>
+        </div>
+
+        <div id="resultados" class="result"></div>
+    </div>
+
+    <script>
+        const generarBtn = document.getElementById("generarBtn");
+        const resultadosDiv = document.getElementById("resultados");
+        const containerDiv = document.getElementById("container");
+
+        generarBtn.addEventListener("click", async () => {
+        const lu = document.getElementById("luInput").value.trim();
+        resultadosDiv.innerHTML = "";
+
+        if (!lu) {
+            resultadosDiv.innerHTML = `<div class="error">Por favor, ingrese un LU válido.</div>`;
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v0/lu/${encodeURIComponent(lu)}`);
+            const data = await response.json();
+
+            resultadosDiv.innerHTML = "";
+
+            if (response.ok) {
+            if (data.archivo) {
+                resultadosDiv.innerHTML = `
+                <div class="success">
+                    ✅ ${data.mensaje}<br>
+                    <a href="${data.archivo}" target="_blank">Ver certificado</a>
+                </div>
+                `;
+            } else {
+                resultadosDiv.innerHTML = `
+                <div class="error">
+                    ⚠️ ${data.mensaje}
+                </div>
+                `;
+            }
+            } else {
+                resultadosDiv.innerHTML = `
+                    <div class="error">
+                    ❌ Error: ${data.error || 'Error inesperado del servidor'}
+                    </div>
+                `;
+            }
+
+            // Agrandar el recuadro si hay resultados
+            if (resultadosDiv.innerHTML) {
+                containerDiv.style.paddingBottom = "35px";
+            }
+
+        } catch (error) {
+            resultadosDiv.innerHTML = `<div class="error">❌ Error al conectar con el servidor: ${error.message}</div>`;
+        }
+        });
+    </script>
+</body>
+</html>

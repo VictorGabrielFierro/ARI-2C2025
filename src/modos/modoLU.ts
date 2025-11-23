@@ -2,41 +2,43 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { generarTituloPorLU } from '../certificados.js';
 import { validarLU } from "../validaciones.js";
-import { carpetaDelArchivoActual } from "../utils.js";
-import path from 'path';
 import { ERRORES } from "../constantes/errores.js";
+import { EXITOS } from "../constantes/exitos.js";
 
-async function solicitarLU(){
+async function solicitarLU(): Promise<string> {
     const rl = readline.createInterface({ input, output });
-    let LUValido: string | null = null;
+    let luValido: string | null = null;
 
-    while (!LUValido) {
+    while (!luValido) {
         let LU = (await rl.question("Ingrese LU: ")).trim();
         if(!validarLU(LU)){
-            console.log('El LU ingresado no es valido. Por favor intente de nuevo.')
+            console.log(ERRORES.LU_INVALIDA)
         } else{
-            LUValido = LU;
+            luValido = LU;
         }
     }
     rl.close();
-    return LUValido
+    return luValido
+
 }
 
 async function iniciarModoLU() {
     console.log('Usted a ingresado al modo LU');
     const LU = await solicitarLU();
-
-    // Ruta del archivo a guardar
-    const __dirname = carpetaDelArchivoActual()
-    const salida = path.join(__dirname, '..', 'certificados',);
+    const salida = '/certificados';
     try {
-        await generarTituloPorLU(LU, salida);
+        const titulo = await generarTituloPorLU(LU, salida);
+        console.log(`${EXITOS.CERTIFICADO_GENERADO_CORRECTAMENTE} LU: ${titulo.lu} Archivo: ${titulo.archivo}`)
+        return
     } catch (err:any) {
         const mensaje = err?.message ?? String(err);
-        if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
+        if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
             console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${mensaje}`)
+            return
+        } else {
+            console.log(`${ERRORES.INTERNO}`)
+            return
         }
-        console.log(`${ERRORES.INTERNO}`)
     }
     
 }

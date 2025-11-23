@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generar Certificados por Fecha</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-top: 40px;
+            color: #2c3e50;
+        }
+
+        .container {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 400px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            border-left: 5px solid #2ecc71;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        .error {
+            background-color: #fdecea;
+            border-left: 5px solid #e74c3c;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Generar Certificados por Fecha</h1>
+    <div class="container">
+        <input type="date" id="fechaInput" placeholder="Ingrese una fecha (YYYY-MM-DD)" />
+        <div>
+        <button id="generarBtn">Generar</button>
+        <button onclick="window.location.href='index.html'">Volver al menú</button>
+        </div>
+
+        <div id="resultados" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById("generarBtn").addEventListener("click", async () => {
+        const fecha = document.getElementById("fechaInput").value.trim();
+        const resultadosDiv = document.getElementById("resultados");
+        resultadosDiv.innerHTML = "";
+
+        if (!fecha) {
+            resultadosDiv.innerHTML = `<div class="error">Por favor, ingrese una fecha válida.</div>`;
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v0/fecha/${fecha}`);
+            const data = await response.json();
+
+            // Si es un error general (objeto con campo "error")
+            if (!Array.isArray(data)) {
+                resultadosDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                return;
+            }
+
+            // Si es un array con resultados por alumno
+            data.forEach(item => {
+            if (item.archivo) {
+                resultadosDiv.innerHTML += `
+                <div class="success">
+                    ✅ ${item.mensaje}<br>
+                    <a href="${item.archivo}" target="_blank">Ver certificado</a>
+                </div>
+                `;
+            } else {
+                resultadosDiv.innerHTML += `
+                <div class="error">
+                    ⚠️ ${item.mensaje}
+                </div>
+                `;
+            }
+            });
+
+        } catch (error) {
+            resultadosDiv.innerHTML = `<div class="error">Error al conectar con el servidor.</div>`;
+        }
+        });
+    </script>
+</body>
+</html>

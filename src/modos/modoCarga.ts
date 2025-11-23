@@ -4,6 +4,8 @@ import { validarCSV } from '../validaciones.js';
 import { cargarCSV } from '../modificaciones-bd.js';
 import { carpetaDelArchivoActual } from '../utils.js';
 import readline from "node:readline/promises";
+import { ERRORES } from "../constantes/errores.js";
+import { EXITOS } from "../constantes/exitos.js";
 
 // Busco carpera actual
 const __dirname = carpetaDelArchivoActual();
@@ -29,12 +31,18 @@ async function iniciarModoCarga() {
     
     try{
         const ruta = await solicitarRutaAlArchivoCSV();
-        console.log('Cargando CSV. Por favor espere.')
         await cargarCSV(ruta);
-        console.log('CSV cargado con éxito.');
+        console.log(EXITOS.DATOS_CARGADOS_CORRECTAMENTE);
     } catch(err:any){
-        console.log('Ocurrió un error al cargar el CSV:', err.message);
+        const mensaje = err?.message ?? String(err);
+        if (mensaje === ERRORES.ARCHIVO_INVALIDO) {
+            console.log(ERRORES.ARCHIVO_INVALIDO)
+        } else if (mensaje === ERRORES.INTERNO){
+            console.log(ERRORES.INTERNO)
+        } else {
+            console.log(ERRORES.FALLA_AL_CARGAR_DATOS)
+        } 
     }
 }
 
-export { iniciarModoCarga, cargarCSV };
+export { iniciarModoCarga };

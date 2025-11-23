@@ -59,18 +59,16 @@ export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
                     .replace(/\[TITULO\]/g, alumno.titulo)
                     .replace(/\[FECHA\]/g, new Date().toLocaleDateString());
 
-        
-        // Guardo el archivo generado en la carpeta solicitada
-
         // Sanitizar LU. Evito el / del LU y lo cambio por -
         const sanitizedLU = alumno.lu.replace('/', '-');
 
         // Ruta completa del archivo a guardar
-        const filePath = path.join(carpetaSalida, `titulo_${sanitizedLU}.html`);
+        const nombreArchivo = `titulo_${sanitizedLU}.html`
+        const filePath = path.join(__dirname, '..', carpetaSalida, nombreArchivo);
         
         // Guardar el HTML
         await fs.writeFile(filePath, html);
-        resultadoTitulo.archivo = filePath
+        resultadoTitulo.archivo = path.join(carpetaSalida, nombreArchivo);
 
         return resultadoTitulo
 

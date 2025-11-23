@@ -1,10 +1,13 @@
-import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
-import { cargarCSV } from "./modos/modoCarga.js";
+import { cargarCSV } from "./modificaciones-bd.js";
 import { validarCSV, validarFecha, validarLU } from "./validaciones.js";
 import { generarTituloPorFecha, generarTituloPorLU } from "./certificados.js"
 import { carpetaDelArchivoActual } from "./utils.js"
+import { ERRORES } from "./constantes/errores.js";
+import { EXITOS } from "./constantes/exitos.js";
+import chokidar from 'chokidar';
+
 
 const NOMBRE_ARCHIVO = 'generacion-certificados.csv';
 // Busco carpera actual
@@ -30,19 +33,59 @@ async function procesarLinea(linea: string, salida: string) {
     try {
         switch (tipo) {
         case 'archivo':
-            const ruta = await validarCSV(carpeta_entrada, parametro)
-            if (ruta != null){
-                cargarCSV(ruta);
+            try {
+                const ruta = await validarCSV(carpeta_entrada, parametro)
+                await cargarCSV(ruta);
+                console.log(EXITOS.DATOS_CARGADOS_CORRECTAMENTE);
+            } catch(err:any){
+                const mensaje = err?.message ?? String(err);
+                if (mensaje === ERRORES.ARCHIVO_INVALIDO) {
+                    console.log(ERRORES.ARCHIVO_INVALIDO)
+                } else if (mensaje === ERRORES.INTERNO){
+                    console.log(ERRORES.INTERNO)
+                } else {
+                    console.log(ERRORES.FALLA_AL_CARGAR_DATOS)
+                } 
             }
             break;
         case 'fecha':
             if (validarFecha(parametro)){
-                generarTituloPorFecha(parametro, salida);
+                try {
+                    const titulos = await generarTituloPorFecha(parametro, salida);
+                    for (const titulo of titulos) {
+                        if (titulo.error == null){
+                            console.log(`${EXITOS.CERTIFICADO_GENERADO_CORRECTAMENTE} LU: ${titulo.lu} Archivo: ${titulo.archivo}`)
+                        } else {
+                            console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${titulo.lu}. Descripcion de error: ${titulo.error}`)
+                        }
+                    }
+                } catch (err:any) {
+                    const mensaje = err?.message ?? String(err);
+                    if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
+                        console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} Fecha: ${parametro}. Descripcion de error: ${mensaje}`)
+                    } else {
+                        console.log(ERRORES.INTERNO)
+                    }
+                }
+            } else {
+                console.log(ERRORES.FECHA_INVALIDA)
             }
             break;
         case 'lu':
             if (validarLU(parametro)){
-                generarTituloPorLU(parametro, salida);
+                try {
+                    const titulo = await generarTituloPorLU(parametro, salida);
+                    console.log(`${EXITOS.CERTIFICADO_GENERADO_CORRECTAMENTE} LU: ${titulo.lu} Archivo: ${titulo.archivo}`)
+                } catch (err:any) {
+                    const mensaje = err?.message ?? String(err);
+                    if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
+                        console.log(`${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${parametro}. Descripcion de error: ${mensaje}`)
+                    } else {
+                        console.log(ERRORES.INTERNO)
+                    }
+                }
+            } else {
+                console.log(ERRORES.LU_INVALIDA)
             }
             break;
         }
@@ -68,33 +111,38 @@ async function verificarOCrearCSV(): Promise<void> {
 async function iniciarModoPolar() {
     console.log('Iniciando modo POLAR...');
 
-    // Verificar o crear el archivo antes de observarlo
     await verificarOCrearCSV();
 
-    // Ruta del archivo a guardar
-    const __dirname = carpetaDelArchivoActual()
-    const salida = path.join(__dirname, '..', 'carpeta-base', 'salida');
-
-    // Llevo un contador de las lineas procesadas
+    const salida = '/carpeta-base/salida';
     let lineasProcesadas = 0;
 
-    // fs.watch dispara un callback cada vez que algo cambia en el archivo
-    fs.watch(generacion_certificados, (eventType, filename) => {
-        if (filename && eventType === 'change') {
-            fs.readFile(generacion_certificados, 'utf8', (err, data) => {
-                if (err) {
-                    console.error('Error leyendo el archivo:', err);
-                    return;
-                }
-                const lineas = data.split(/\r?\n/).filter(l => l.trim() !== '');
-                
-                // Procesar solo las nuevas líneas, sin el encabezado
-                const nuevasLineas = lineas.slice(1 + lineasProcesadas);
-                nuevasLineas.forEach(linea => procesarLinea(linea, salida));
+    const watcher = chokidar.watch(generacion_certificados, {
+        persistent: true,
+        usePolling: true,        // fuerza la detección en tiempo real
+        interval: 500,           // medio segundo
+        awaitWriteFinish: {
+            stabilityThreshold: 500, // espera medio segundo a que el archivo deje de escribirse
+            pollInterval: 100
+        }
+    });
 
-                // Actualizamos el contador
-                lineasProcesadas += nuevasLineas.length;
-            });
+    watcher.on('change', async () => {
+        try {
+            const data = await fsPromises.readFile(generacion_certificados, 'utf8');
+            const lineas = data.split(/\r?\n/).filter(l => l.trim() !== '');
+            const nuevasLineas = lineas.slice(1 + lineasProcesadas);
+
+            for (const linea of nuevasLineas) {
+                try {
+                    await procesarLinea(linea, salida);
+                } catch (err) {
+                    console.error('Error procesando línea:', linea, err);
+                }
+            }
+
+            lineasProcesadas += nuevasLineas.length;
+        } catch (err) {
+            console.error('Error leyendo el archivo:', err);
         }
     });
 
