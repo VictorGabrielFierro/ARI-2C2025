@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { ERRORES } from './constantes/errores.js';
+import { CamposAlumno, ReglasValidacion } from "./tipos/index.js";
 
 export function validarFecha(fecha: string): boolean {
     // Patrón: 4 dígitos año, 2 dígitos mes, 2 dígitos día, separados por guiones
@@ -23,9 +24,13 @@ export function validarFecha(fecha: string): boolean {
     return true;
 }
 
-export function validarLU(input: string): boolean {
+export function validarLU(lu: string | null | undefined): boolean {
+    if (!lu) {
+        console.log('3')
+        return false
+    }
     const regex = /^[1-9][0-9]{0,3}\/[0-9]{2}$/;
-    return regex.test(input);
+    return regex.test(lu);
 }
 
 export async function validarCSV(carpetaBase: string, nombre: string): Promise<string> {
@@ -63,10 +68,37 @@ export async function validarCSV(carpetaBase: string, nombre: string): Promise<s
 }
 
 // Validar nombre, apellido, título: puede ser varias palabras separadas por espacios, solo letras
-export function validarNombreApellidoTitulo(valor: string | null): boolean {
-    if (valor === null) return true; // Permitir nulo
+export function validarNombreApellidoTitulo(valor: string | null | undefined): boolean {
+    if (!valor) return true; // Permitir nulo
     const titulo = valor.trim();
     if (!titulo) return false; // No vacío
     // Permite varias palabras separadas por un espacio, solo letras
     return /^([A-Za-z]+ ?)+$/.test(titulo);
+}
+
+export function validarAlumno(
+    campos: CamposAlumno,
+    opcional: ReglasValidacion
+): { valido: boolean; error?: string } {
+    const { lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = campos;
+
+    if (!opcional.lu && !validarLU(lu)) {
+        return { valido: false, error: ERRORES.LU_INVALIDA };
+    }
+    if (!opcional.apellido && !validarNombreApellidoTitulo(apellido)) {
+        return { valido: false, error: ERRORES.APELLIDO_INVALIDO };
+    }
+    if (!opcional.nombres && !validarNombreApellidoTitulo(nombres)) {
+        return { valido: false, error: ERRORES.NOMBRES_INVALIDOS };
+    }
+    if (!opcional.titulo && titulo && !validarNombreApellidoTitulo(titulo)) {
+        return { valido: false, error: ERRORES.TITULO_INVALIDO };
+    }
+    if (!opcional.titulo_en_tramite && titulo_en_tramite && !validarFecha(titulo_en_tramite)) {
+        return { valido: false, error: ERRORES.TITULO_EN_TRAMITE_INVALIDO };
+    }
+    if (!opcional.egreso && egreso && !validarFecha(egreso)) {
+        return { valido: false, error: ERRORES.EGRESO_INVALIDO };
+    }
+    return { valido: true };
 }

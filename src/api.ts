@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { generarTituloPorFecha, generarTituloPorLU } from './certificados.js';
-import { validarFecha, validarLU, validarNombreApellidoTitulo } from "./validaciones.js";
+import { validarFecha, validarLU, validarAlumno } from "./validaciones.js";
 import { carpetaDelArchivoActual } from "./utils.js";
 import { cargarJSON, eliminarAlumnoPorLU, insertarAlumno, editarAlumno } from "./modificaciones-bd.js";
 import { obtenerTablaAlumnos } from "./consultas-bd.js"
@@ -210,25 +210,22 @@ app.delete("/api/v0/alumnos/:lu", async (req: Request, res: Response) => {
 // Crear un alumno
 app.post("/api/v0/alumno", async (req: Request, res: Response) => {
     const { lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;
-
+    const reglasValidacion = {
+        lu: false,
+        apellido: false,
+        nombres: false,
+        titulo: true,
+        titulo_en_tramite: true,
+        egreso: true
+    };
     // Validar campos obligatorios
-    if (!validarLU(lu)) {
-        return res.status(400).json({ error: ERRORES.LU_INVALIDA });
-    }
-    if (!validarNombreApellidoTitulo(apellido)) {
-        return res.status(400).json({ error: ERRORES.APELLIDO_INVALIDO });
-    }
-    if (!validarNombreApellidoTitulo(nombres)) {
-        return res.status(400).json({ error: ERRORES.NOMBRES_INVALIDOS });
-    }
-    if (titulo && !validarNombreApellidoTitulo(titulo)) {
-        return res.status(400).json({ error: ERRORES.TITULO_INVALIDO }); // puede ser null
-    }
-    if (titulo_en_tramite && !validarFecha(titulo_en_tramite)) {  // puede ser null
-        return res.status(400).json({ error: ERRORES.TITULO_EN_TRAMITE_INVALIDO });
-    }
-    if (egreso && !validarFecha(egreso)) {  // puede ser null
-        return res.status(400).json({ error: ERRORES.EGRESO_INVALIDO });
+    const resultadoValidacion = validarAlumno(
+        { lu, apellido, nombres, titulo, titulo_en_tramite, egreso },
+        reglasValidacion
+    );
+    if (!resultadoValidacion.valido) {
+        // lanzar el error correspondiente al front
+        return res.status(400).json({ error: resultadoValidacion.error });
     }
     try {
         const nuevoAlumno = await insertarAlumno({
@@ -260,39 +257,35 @@ app.post("/api/v0/alumno", async (req: Request, res: Response) => {
 });
 
 // Editar un alumno
-app.put("/api/v0/alumno/:lu", async (req: Request, res: Response) => {
-    const { lu } = req.params;  // LU vieja
-    const { luNuevo, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;
-
-    // Validar LU vieja
-    if (!lu || !validarLU(lu)) {
-        return res.status(400).json({ error: ERRORES.LU_INVALIDA });
-    }
-
-    // SACAR ESTE CODIGO REPETIDO
-    // Validar campos obligatorios
-    if (!validarLU(luNuevo)) {
-        return res.status(400).json({ error: ERRORES.LU_INVALIDA });
-    }
-    if (!validarNombreApellidoTitulo(apellido)) {
-        return res.status(400).json({ error: ERRORES.APELLIDO_INVALIDO });
-    }
-    if (!validarNombreApellidoTitulo(nombres)) {
-        return res.status(400).json({ error: ERRORES.NOMBRES_INVALIDOS });
-    }
-    if (titulo && !validarNombreApellidoTitulo(titulo)) {
-        return res.status(400).json({ error: ERRORES.TITULO_INVALIDO }); // puede ser null
-    }
-    if (titulo_en_tramite && !validarFecha(titulo_en_tramite)) {  // puede ser null
-        return res.status(400).json({ error: ERRORES.TITULO_EN_TRAMITE_INVALIDO });
-    }
-    if (egreso && !validarFecha(egreso)) {  // puede ser null
-        return res.status(400).json({ error: ERRORES.EGRESO_INVALIDO });
-    }
+app.put("/api/v0/alumno/:lu", async (req, res: Response) => {
     try {
+        const luViejo = decodeURIComponent(req.params.lu); // LU vieja
+        const { luNuevo: lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;;
+
+        // Validar LU vieja
+        if (!luViejo || !validarLU(luViejo)) {
+            return res.status(400).json({ error: ERRORES.LU_INVALIDA });
+        }
+        // Validar campos obligatorios
+        const reglasValidacion = {
+            lu: true,
+            apellido: true,
+            nombres: true,
+            titulo: true,
+            titulo_en_tramite: true,
+            egreso: true
+        };
+        const resultadoValidacion = validarAlumno(
+            { lu, apellido, nombres, titulo, titulo_en_tramite, egreso },
+            reglasValidacion
+        );
+        if (!resultadoValidacion.valido) {
+            // lanzar el error correspondiente al front
+            return res.status(400).json({ error: resultadoValidacion.error });
+        }
         await editarAlumno({ 
-            luViejo: lu.trim(),
-            luNuevo,
+            luViejo: luViejo.trim(),
+            luNuevo: lu ?? null,
             apellido,
             nombres,
             titulo,
@@ -321,41 +314,3 @@ app.put("/api/v0/alumno/:lu", async (req: Request, res: Response) => {
     }
 });
 
-// // Obtener un alumno
-// app.get("/api/v0/alumno/:lu", async (req: Request, res: Response) => {
-//     const luParam = req.params.lu;
-
-//     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
-//     if (typeof luParam !== "string" || !luParam.trim()) {
-//         return res.status(400).json({ error: ERRORES.LU_INVALIDA });
-//     }
-
-//     const LU = luParam.trim();
-//     if(!validarLU(LU)){
-//         return res.status(400).json({ error: ERRORES.LU_INVALIDA });
-//     } 
-//     try {
-//         const alumno = await obtenerDatosAlumnoPorLU(LU);
-//         // Devolver los datos del alumno tal como los espera el frontend
-//         return res.json({
-//             lu: alumno.lu,
-//             apellido: alumno.apellido,
-//             nombres: alumno.nombres,
-//             titulo: alumno.titulo,                     // puede ser null
-//             titulo_en_tramite: alumno.titulo_en_tramite, // puede ser null
-//             egreso: alumno.egreso                       // puede ser null
-//         });
-        
-//     } catch (err: any) {
-//         // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU()
-//         const mensaje = err?.message ?? String(err);
-//         if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
-//             return res.status(404).json({ error: mensaje });
-//         }
-//         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
-//             return res.status(500).json({ error: mensaje });
-//         }
-//         // Otro error inesperado
-//         return res.status(500).json({ error: ERRORES.INTERNO });
-//     }
-// });

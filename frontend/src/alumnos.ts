@@ -52,7 +52,12 @@ export function abrirModal(id: string): void {
 
 export function cerrarModal(id: string): void {
     const modal = document.getElementById(id) as HTMLDivElement;
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        // Limpiar mensajes dentro del modal
+        const mensajes = modal.querySelectorAll<HTMLDivElement>('.mensaje');
+        mensajes.forEach(m => m.textContent = '');
+    }
 }
 
 // --- Inicializar botones de cerrar modales ---
@@ -125,7 +130,6 @@ function initFormCrearAlumno(): void {
                 mensajeModal.style.color = 'green';
                 mensajeModal.textContent = data.mensaje;
                 await cargarAlumnos();
-                cerrarModal('modalCrear');
                 form.reset();
             } else {
                 mensajeModal.style.color = 'red';
@@ -147,9 +151,9 @@ function initFormEditarAlumno(): void {
         e.preventDefault();
 
         const alumnoActualizado = {
-            luNuevo: (document.getElementById("luNuevoInput") as HTMLInputElement).value.trim(),
-            apellido: (document.getElementById("apellidoEditarInput") as HTMLInputElement).value.trim(),
-            nombres: (document.getElementById("nombresEditarInput") as HTMLInputElement).value.trim(),
+            luNuevo: (document.getElementById("luNuevoInput") as HTMLInputElement).value.trim() || null,
+            apellido: (document.getElementById("apellidoEditarInput") as HTMLInputElement).value.trim() || null,
+            nombres: (document.getElementById("nombresEditarInput") as HTMLInputElement).value.trim() || null,
             titulo: (document.getElementById("tituloEditarInput") as HTMLInputElement).value.trim() || null,
             titulo_en_tramite: (document.getElementById("tituloTramiteEditarInput") as HTMLInputElement).value || null,
             egreso: (document.getElementById("egresoEditarInput") as HTMLInputElement).value || null
@@ -170,7 +174,6 @@ function initFormEditarAlumno(): void {
                 mensajeDiv.textContent = data.mensaje;
                 await cargarAlumnos();
                 form.reset();
-                cerrarModal('modalEditar');
             } else {
                 mensajeDiv.style.color = "red";
                 mensajeDiv.textContent = data.error ?? "Error al actualizar";

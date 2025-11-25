@@ -159,56 +159,77 @@ export async function editarAlumno({
     egreso,
 }: {
     luViejo: string;
-    luNuevo: string | null;
-    apellido: string;
-    nombres: string;
-    titulo: string | null;
-    titulo_en_tramite: string | null;
-    egreso: string | null;
+    luNuevo?: string | null;
+    apellido?: string | null;
+    nombres?: string | null;
+    titulo?: string | null;
+    titulo_en_tramite?: string | null;
+    egreso?: string | null;
 }) {
     const pool = await sql.connect(dbConfigAdmin);
-    if (!luNuevo) {
-        luNuevo = luViejo
-    }
-    try {
-        const result = await pool.request()
-            .input("luViejo", sql.NVarChar(50), luViejo)
-            .input("luNuevo", sql.NVarChar(50), luNuevo)
-            .input("apellido", sql.NVarChar(50), apellido)
-            .input("nombres", sql.NVarChar(50), nombres)
-            .input("titulo", sql.NVarChar(100), titulo)
-            .input("titulo_en_tramite", sql.Date, titulo_en_tramite)
-            .input("egreso", sql.Date, egreso)
-            .query(`
-                UPDATE aida.alumnos
-                SET 
-                    lu = @luNuevo,
-                    apellido = @apellido,
-                    nombres = @nombres,
-                    titulo = @titulo,
-                    titulo_en_tramite = @titulo_en_tramite,
-                    egreso = @egreso
-                WHERE lu = @luViejo
-            `);
 
-        // Si se insertó correctamente
+    if (!luNuevo) {
+        luNuevo = luViejo;
+    }
+
+    try {
+        const request = pool.request()
+            .input("luViejo", sql.NVarChar(50), luViejo);
+
+        const updates: string[] = [];
+        if (luNuevo !== null) {
+            request.input("luNuevo", sql.NVarChar(50), luNuevo);
+            updates.push("lu = @luNuevo");
+        }
+        if (apellido !== null && apellido !== undefined) {
+            request.input("apellido", sql.NVarChar(50), apellido);
+            updates.push("apellido = @apellido");
+        }
+        if (nombres !== null && nombres !== undefined) {
+            request.input("nombres", sql.NVarChar(50), nombres);
+            updates.push("nombres = @nombres");
+        }
+        if (titulo !== null && titulo !== undefined) {
+            request.input("titulo", sql.NVarChar(100), titulo);
+            updates.push("titulo = @titulo");
+        }
+        if (titulo_en_tramite !== null && titulo_en_tramite !== undefined) {
+            request.input("titulo_en_tramite", sql.Date, titulo_en_tramite);
+            updates.push("titulo_en_tramite = @titulo_en_tramite");
+        }
+        if (egreso !== null && egreso !== undefined) {
+            request.input("egreso", sql.Date, egreso);
+            updates.push("egreso = @egreso");
+        }
+
+        if (updates.length === 0) {
+            // No hay cambios
+            return;
+        }
+
+        const query = `
+            UPDATE aida.alumnos
+            SET ${updates.join(", ")}
+            WHERE lu = @luViejo
+        `;
+
+        const result = await request.query(query);
+
         if (result.rowsAffected[0] === 0) {
             throw new Error(ERRORES.ALUMNO_NO_ENCONTRADO);
         }
 
     } catch (error: any) {
-        // Si la LU ya existe (clave primaria duplicada)
-        if (error.number === 2627) {  // Código de error SQL Server para PK duplicada
+        if (error.number === 2627) {
             throw new Error(ERRORES.LU_DUPLICADA);
         }
         if (error.message === ERRORES.ALUMNO_NO_ENCONTRADO) {
             throw error;
         }
         if (error.message === ERRORES.FALLA_AL_CARGAR_DATOS) {
-            throw error; // Re-lanzás el mismo error
+            throw error;
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-
     } finally {
         await pool.close();
     }
