@@ -1,7 +1,7 @@
 import path from "path";
 import { stdin as input, stdout as output } from "node:process";
 import { validarCSV } from '../validaciones.js';
-import { cargarCSV } from '../modificaciones-bd.js';
+import { cargarCSV } from '../bd/modificaciones-alumnos.js';
 import { carpetaDelArchivoActual } from '../utils.js';
 import readline from "node:readline/promises";
 import { ERRORES } from "../constantes/errores.js";

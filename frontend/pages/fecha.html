@@ -12,56 +12,11 @@
     <div class="container">
         <input type="date" id="fechaInput" placeholder="Ingrese una fecha (YYYY-MM-DD)" />
         <div>
-        <button id="generarBtn">Generar</button>
-        <button onclick="window.location.href='../index.html'">Volver al menú</button>
+        <button id="generarBtnFecha">Generar</button>
+        <button onclick="window.location.href='./index.html'">Volver al menú</button>
         </div>
-
         <div id="resultados" class="result"></div>
     </div>
-
-    <script>
-        document.getElementById("generarBtn").addEventListener("click", async () => {
-        const fecha = document.getElementById("fechaInput").value.trim();
-        const resultadosDiv = document.getElementById("resultados");
-        resultadosDiv.innerHTML = "";
-
-        if (!fecha) {
-            resultadosDiv.innerHTML = `<div class="error">Por favor, ingrese una fecha válida.</div>`;
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/v0/fecha/${fecha}`);
-            const data = await response.json();
-
-            // Si es un error general (objeto con campo "error")
-            if (!Array.isArray(data)) {
-                resultadosDiv.innerHTML = `<div class="error">${data.error}</div>`;
-                return;
-            }
-
-            // Si es un array con resultados por alumno
-            data.forEach(item => {
-            if (item.archivo) {
-                resultadosDiv.innerHTML += `
-                <div class="success">
-                    ✅ ${item.mensaje}<br>
-                    <a href="${item.archivo}" target="_blank">Ver certificado</a>
-                </div>
-                `;
-            } else {
-                resultadosDiv.innerHTML += `
-                <div class="error">
-                    ⚠️ ${item.mensaje}
-                </div>
-                `;
-            }
-            });
-
-        } catch (error) {
-            resultadosDiv.innerHTML = `<div class="error">Error al conectar con el servidor.</div>`;
-        }
-        });
-    </script>
+    <script src="../dist/fecha.js" type="module"></script>
 </body>
 </html>

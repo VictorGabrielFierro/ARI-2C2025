@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { carpetaDelArchivoActual } from "./utils.js";
 import alumnosRouter from "./routes/alumnos.js";
+import usuariosRouter from "./routes/usuarios.js";
 
 const app = express();
 const PORT = 3000;
@@ -18,8 +19,12 @@ app.get("/", (_req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
-// Prefijo común para todas las rutas de alumnos
-app.use("/api/v0", alumnosRouter);
+// Rutas de alumnos (tabla, cargar, eliminar, crear, editar alumnos)
+app.use("/api/v0/alumnos", alumnosRouter);
+
+// Rutas de usuarios (login, creación, etc.)
+app.use("/api/v0/usuarios", usuariosRouter);
+
 
 app.listen(PORT, () => {
     console.log(`Servidor AIDA escuchando en http://localhost:${PORT}`);

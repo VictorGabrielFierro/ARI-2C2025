@@ -13,65 +13,11 @@
     <div class="container" id="container">
         <input type="text" id="luInput" placeholder="Ingrese el LU del alumno" />
         <div>
-        <button id="generarBtn">Generar</button>
-        <button onclick="window.location.href='../index.html'">Volver al menú</button>
+        <button id="generarBtnLU">Generar</button>
+        <button onclick="window.location.href='./index.html'">Volver al menú</button>
         </div>
-
         <div id="resultados" class="result"></div>
     </div>
-
-    <script>
-        const generarBtn = document.getElementById("generarBtn");
-        const resultadosDiv = document.getElementById("resultados");
-        const containerDiv = document.getElementById("container");
-
-        generarBtn.addEventListener("click", async () => {
-        const lu = document.getElementById("luInput").value.trim();
-        resultadosDiv.innerHTML = "";
-
-        if (!lu) {
-            resultadosDiv.innerHTML = `<div class="error">Por favor, ingrese un LU válido.</div>`;
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/v0/lu/${encodeURIComponent(lu)}`);
-            const data = await response.json();
-
-            resultadosDiv.innerHTML = "";
-
-            if (response.ok) {
-            if (data.archivo) {
-                resultadosDiv.innerHTML = `
-                <div class="success">
-                    ✅ ${data.mensaje}<br>
-                    <a href="${data.archivo}" target="_blank">Ver certificado</a>
-                </div>
-                `;
-            } else {
-                resultadosDiv.innerHTML = `
-                <div class="error">
-                    ⚠️ ${data.mensaje}
-                </div>
-                `;
-            }
-            } else {
-                resultadosDiv.innerHTML = `
-                    <div class="error">
-                    ❌ Error: ${data.error || 'Error inesperado del servidor'}
-                    </div>
-                `;
-            }
-
-            // Agrandar el recuadro si hay resultados
-            if (resultadosDiv.innerHTML) {
-                containerDiv.style.paddingBottom = "35px";
-            }
-
-        } catch (error) {
-            resultadosDiv.innerHTML = `<div class="error">❌ Error al conectar con el servidor: ${error.message}</div>`;
-        }
-        });
-    </script>
+    <script src="../dist/lu.js" type="module"></script>
 </body>
 </html>

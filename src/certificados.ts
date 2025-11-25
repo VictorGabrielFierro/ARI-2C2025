@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { obtenerDatosAlumnoPorLU, obtenerDatosAlumnoPorFecha } from './consultas-bd.js';
+import { obtenerDatosAlumnoPorLU, obtenerDatosAlumnoPorFecha } from './bd/consultas-alumnos.js';
 import { ResultadoTitulo, Alumno } from "./tipos/index.js";
 import { ERRORES } from "./constantes/errores.js";
 

@@ -1,6 +1,6 @@
 import fsPromises from 'fs/promises';
 import path from 'path';
-import { cargarCSV } from "./modificaciones-bd.js";
+import { cargarCSV } from "./bd/modificaciones-alumnos.js";
 import { validarCSV, validarFecha, validarLU } from "./validaciones.js";
 import { generarTituloPorFecha, generarTituloPorLU } from "./certificados.js"
 import { carpetaDelArchivoActual } from "./utils.js"

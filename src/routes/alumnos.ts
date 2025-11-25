@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { Request, Response } from "express";
 import { generarTituloPorFecha, generarTituloPorLU } from '../certificados.js';
 import { validarFecha, validarLU, validarAlumno } from "../validaciones.js";
-import { cargarJSON, eliminarAlumnoPorLU, insertarAlumno, editarAlumno } from "../modificaciones-bd.js";
-import { obtenerTablaAlumnos } from "../consultas-bd.js"
+import { cargarJSON, eliminarAlumnoPorLU, insertarAlumno, editarAlumno } from "../bd/modificaciones-alumnos.js";
+import { obtenerTablaAlumnos } from "../bd/consultas-alumnos.js"
 import { ResultadoRespuesta } from "../tipos/index.js";
 import { ERRORES } from "../constantes/errores.js";
 import { EXITOS } from "../constantes/exitos.js";
+import { verificarToken } from "../auth.js";
 
 
 const router = Router();
@@ -15,7 +16,7 @@ const router = Router();
 const salida = '/certificados';
 
 // Obtener certificado por LU
-router.get("/lu/:lu", async (req: Request, res: Response) => {
+router.get("/lu/:lu", verificarToken, async (req: Request, res: Response) => {
     const luParam = req.params.lu;
 
     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
@@ -65,7 +66,7 @@ router.get("/lu/:lu", async (req: Request, res: Response) => {
 });
 
 // Obtener certificados por fecha
-router.get("/fecha/:fecha", async (req: Request, res: Response) => {
+router.get("/fecha/:fecha", verificarToken, async (req: Request, res: Response) => {
     const fechaPAram = req.params.fecha;
 
     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
@@ -111,7 +112,7 @@ router.get("/fecha/:fecha", async (req: Request, res: Response) => {
 });
 
 // Cargar alumnos desde archivo (JSON)
-router.patch("/archivo", async (req: Request, res: Response) => {
+router.patch("/archivo", verificarToken, async (req: Request, res: Response) => {
     const alumnos = req.body;
     try {
         // Verificar que no esté vacío
@@ -142,7 +143,7 @@ router.patch("/archivo", async (req: Request, res: Response) => {
 });
 
 // Obtener tabla alumnos
-router.get("/alumnos", async (_: Request, res: Response) => {
+router.get("/alumnos", verificarToken, async (_: Request, res: Response) => {
     try {
         const alumnos = await obtenerTablaAlumnos(); 
         res.json(alumnos); 
@@ -154,7 +155,7 @@ router.get("/alumnos", async (_: Request, res: Response) => {
 
 
 // Eliminar un alumno
-router.delete("/alumnos/:lu", async (req: Request, res: Response) => {
+router.delete("/alumnos/:lu", verificarToken, async (req: Request, res: Response) => {
     const luParam = req.params.lu;
 
     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
@@ -187,7 +188,7 @@ router.delete("/alumnos/:lu", async (req: Request, res: Response) => {
 });
 
 // Crear un alumno
-router.post("/alumno", async (req: Request, res: Response) => {
+router.post("/alumno", verificarToken, async (req: Request, res: Response) => {
     const { lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;
     const reglasValidacion = {
         lu: false,
@@ -236,7 +237,7 @@ router.post("/alumno", async (req: Request, res: Response) => {
 });
 
 // Editar un alumno
-router.put("/alumno/:lu", async (req: any, res: Response) => {
+router.put("/alumno/:lu", verificarToken, async (req: any, res: Response) => {
     try {
         const luViejo = decodeURIComponent(req.params.lu); // LU vieja
         const { luNuevo: lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;;
