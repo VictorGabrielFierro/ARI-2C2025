@@ -17,8 +17,8 @@ const dbConfigAdmin: SqlConfig = {
 
 // Pool para usuario logging (solo tiene permisos de SELECT sobre usuarios)
 const dbConfigLogging: SqlConfig = {
-    user: 'aida_logging',
-    password: 'Logging2025',
+    user: 'aida_login',
+    password: 'Login2025',
     server: 'localhost',
     database: 'aida_db',
     options: {
@@ -30,7 +30,7 @@ const dbConfigLogging: SqlConfig = {
 // ------------------ POOLS ------------------
 
 let adminPool: ConnectionPool | null = null;
-let loggingPool: ConnectionPool | null = null;
+let loginPool: ConnectionPool | null = null;
 
 // ------------------ FUNCIONES DE CONEXIÓN ------------------
 
@@ -41,9 +41,9 @@ export async function getAdminPool(): Promise<ConnectionPool> {
     return adminPool;
 }
 
-export async function getLoggingPool(): Promise<ConnectionPool> {
-    if (!loggingPool) {
-        loggingPool = await new sql.ConnectionPool(dbConfigLogging).connect();
+export async function getLoginPool(): Promise<ConnectionPool> {
+    if (!loginPool) {
+        loginPool = await new sql.ConnectionPool(dbConfigLogging).connect();
     }
-    return loggingPool;
+    return loginPool;
 }

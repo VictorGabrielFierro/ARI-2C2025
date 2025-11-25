@@ -1,3 +1,5 @@
+import { checkToken, getAuthHeaders } from "./authCheck.js";
+checkToken();
 // Obtener elementos del DOM con verificación de null
 const generarBtnLU = document.getElementById("generarBtnLU") as HTMLButtonElement | null;
 const resultadosDivLU = document.getElementById("resultados") as HTMLDivElement | null;
@@ -17,7 +19,9 @@ if (!generarBtnLU || !resultadosDivLU || !containerDivLU || !luInput) {
         }
 
         try {
-            const response = await fetch(`/api/v0/lu/${encodeURIComponent(lu)}`);
+            const response = await fetch(`/api/v0/alumnos/lu/${encodeURIComponent(lu)}`, {
+                headers: getAuthHeaders()
+            });
             const data = await response.json();
 
             resultadosDivLU.innerHTML = "";
@@ -45,7 +49,6 @@ if (!generarBtnLU || !resultadosDivLU || !containerDivLU || !luInput) {
                 `;
             }
 
-            // Agrandar el recuadro si hay resultados
             if (resultadosDivLU.innerHTML && containerDivLU) {
                 containerDivLU.style.paddingBottom = "35px";
             }

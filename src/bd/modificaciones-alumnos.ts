@@ -27,10 +27,10 @@ export async function cargarCSV(ruta: string){
             const values = line.split(',').map((v: string) => v === '' ? null : v);
 
             await new sql.Request()
-            .input('lu', sql.VarChar, values[0])
-            .input('apellido', sql.VarChar, values[1])
-            .input('nombres', sql.VarChar, values[2])
-            .input('titulo', sql.VarChar, values[3])
+            .input('lu', values[0])
+            .input('apellido', values[1])
+            .input('nombres', values[2])
+            .input('titulo', values[3])
             .input('titulo_en_tramite', sql.Date, values[4])
             .input('egreso', sql.Date, values[5])
             .query(`
@@ -57,10 +57,9 @@ export async function cargarJSON(alumnos: any[]) {
 
         // BORRAR tabla antes de insertar (igual que en cargarCSV)
         await pool.request().query('DELETE FROM aida.alumnos');
-
         // Insertar cada alumno
         for (const alumno of alumnos) {
-            await new sql.Request()
+            await pool.request()
                 .input('lu', sql.VarChar, alumno.lu)
                 .input('apellido', sql.VarChar, alumno.apellido)
                 .input('nombres', sql.VarChar, alumno.nombres)
@@ -68,8 +67,8 @@ export async function cargarJSON(alumnos: any[]) {
                 .input('titulo_en_tramite', sql.Date, alumno.titulo_en_tramite || null)
                 .input('egreso', sql.Date, alumno.egreso || null)
                 .query(`
-                INSERT INTO aida.alumnos (lu, apellido, nombres, titulo, titulo_en_tramite, egreso)
-                VALUES (@lu, @apellido, @nombres, @titulo, @titulo_en_tramite, @egreso)
+                    INSERT INTO aida.alumnos (lu, apellido, nombres, titulo, titulo_en_tramite, egreso)
+                    VALUES (@lu, @apellido, @nombres, @titulo, @titulo_en_tramite, @egreso)
                 `);
         }
     } catch (err:any) {

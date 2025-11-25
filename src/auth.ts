@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt';
 import { ConnectionPool } from 'mssql'; 
 import { Usuario } from "./tipos/index.js";
-import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
 
 
+export const JWT_SECRET = "clave-ultra-secreta";
 
 // Funciones de hash y verificación
 export async function verificarPassword(password: string, hash: string): Promise<boolean> {
@@ -31,17 +32,36 @@ export async function autenticarUsuario(pool: ConnectionPool, username: string, 
     };
 }
 
-export const verificarToken = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+// Para generar un token
+export function generarToken(usuario: string): string {
+  return jwt.sign({ usuario }, JWT_SECRET, { expiresIn: "2h" });
+}
 
-    if (!token) return res.status(401).json({ error: "No token" });
+// Middleware para verificar token
+export function verificarTokenMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; rol: string };
-        req.user = payload;
-        return next();
-    } catch (err) {
-        return res.status(403).json({ error: "Token inválido" });
-    }
-};
+  if (!token) {
+    return res.status(401).json({ error: "No token" });
+  }
+
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return next();
+  } catch (err) {
+    return res.status(403).json({ error: "Token inválido" });
+  }
+}
+
+
+// Función simple para validar token y devolver boolean
+export function verificarToken(token: string): boolean {
+  try {
+    jwt.verify(token, JWT_SECRET);
+    return true;
+  } catch {
+    return false;
+  }
+}
+export default JWT_SECRET;

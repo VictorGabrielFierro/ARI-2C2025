@@ -1,3 +1,11 @@
+import { checkToken, getAuthHeaders } from "./authCheck.js";
+checkToken();
+
+const generarBtnArchivo = document.getElementById("generarBtnArchivo") as HTMLButtonElement | null;
+const resultadosDivArchivo = document.getElementById("resultados") as HTMLDivElement | null;
+const containerDivArchivo = document.getElementById("container") as HTMLDivElement | null;
+const fileInput = document.getElementById("csvInput") as HTMLInputElement | null;
+
 // Función simple para convertir CSV a JSON
 function csvToJson(csvText: string) {
     const lines = csvText.trim().split("\n");
@@ -9,11 +17,6 @@ function csvToJson(csvText: string) {
         return obj;
     });
 }
-
-const generarBtnArchivo = document.getElementById("generarBtnArchivo") as HTMLButtonElement | null;
-const resultadosDivArchivo = document.getElementById("resultados") as HTMLDivElement | null;
-const containerDivArchivo = document.getElementById("container") as HTMLDivElement | null;
-const fileInput = document.getElementById("csvInput") as HTMLInputElement | null;
 
 if (!generarBtnArchivo || !resultadosDivArchivo || !containerDivArchivo || !fileInput) {
     console.error("No se encontraron los elementos del DOM requeridos.");
@@ -36,10 +39,10 @@ if (!generarBtnArchivo || !resultadosDivArchivo || !containerDivArchivo || !file
                 resultadosDivArchivo.innerHTML = `<div class="error">❌ Archivo vacío o inválido.</div>`;
                 return;
             }
-
-            const response = await fetch("/api/v0/archivo", {
+            
+            const response = await fetch("/api/v0/alumnos/archivo", {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(alumnos),
             });
 

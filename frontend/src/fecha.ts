@@ -1,3 +1,6 @@
+import { checkToken, getAuthHeaders } from "./authCheck.js";
+checkToken();
+
 // Obtener elementos del DOM con verificación de null
 const generarBtnFecha = document.getElementById("generarBtnFecha") as HTMLButtonElement | null;
 const fechaInput = document.getElementById("fechaInput") as HTMLInputElement | null;
@@ -16,16 +19,16 @@ if (!generarBtnFecha || !fechaInput || !resultadosDivFecha) {
         }
 
         try {
-            const response = await fetch(`/api/v0/fecha/${encodeURIComponent(fecha)}`);
+            const response = await fetch(`/api/v0/alumnos/fecha/${encodeURIComponent(fecha)}`, {
+                headers: getAuthHeaders()
+            });
             const data = await response.json();
 
-            // Si es un error general (objeto con campo "error")
             if (!Array.isArray(data)) {
                 resultadosDivFecha.innerHTML = `<div class="error">${data.error || "Error inesperado"}</div>`;
                 return;
             }
 
-            // Si es un array con resultados por alumno
             data.forEach(item => {
                 if (item.archivo) {
                     resultadosDivFecha.innerHTML += `

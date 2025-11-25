@@ -16,3 +16,9 @@ GO
 CREATE LOGIN aida_admin WITH PASSWORD = 'Admin2025';
 CREATE USER aida_admin FOR LOGIN aida_admin;
 GO
+
+-- Crear el usuario que va a a hacer login
+CREATE LOGIN aida_login WITH PASSWORD = 'Login2025';
+CREATE USER aida_login FOR LOGIN aida_login;
+GO
+
