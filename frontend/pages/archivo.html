@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cargar CSV de Alumnos</title>
+    <link rel="stylesheet" href="../styles/global.css">
+    <link rel="stylesheet" href="../styles/archivo.css">
+</head>
+<body>
+    <h1>Cargar CSV de Alumnos</h1>
+
+    <div class="container" id="container">
+        <input type="file" id="csvInput" accept=".csv" />
+        <div>
+        <button id="subirBtn">Subir CSV</button>
+        <button onclick="window.location.href='../index.html'">Volver al menú</button>
+        </div>
+
+        <div id="resultados" class="result"></div>
+    </div>
+
+    <script>
+        // Función simple para convertir CSV a JSON
+        function csvToJson(csvText) {
+        const lines = csvText.trim().split("\n");
+        const headers = lines[0].split(",");
+        return lines.slice(1).map(line => {
+            const values = line.split(",");
+            const obj = {};
+            headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim() || "");
+            return obj;
+        });
+        }
+
+        const subirBtn = document.getElementById("subirBtn");
+        const resultadosDiv = document.getElementById("resultados");
+        const containerDiv = document.getElementById("container");
+
+        subirBtn.addEventListener("click", async () => {
+        resultadosDiv.innerHTML = "";
+        const fileInput = document.getElementById("csvInput");
+        if (!fileInput.files.length) {
+            resultadosDiv.innerHTML = `<div class="error">Por favor, seleccione un archivo CSV.</div>`;
+            return;
+        }
+
+        const file = fileInput.files[0];
+        try {
+            const text = await file.text();
+            const alumnos = csvToJson(text);
+
+            if (!alumnos || alumnos.length === 0) {
+            resultadosDiv.innerHTML = `<div class="error">❌ Archivo vacío o inválido.</div>`;
+            return;
+            }
+
+            const response = await fetch("/api/v0/archivo", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(alumnos)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultadosDiv.innerHTML = `<div class="success">✅ ${data.mensaje}</div>`;
+            } else {
+                resultadosDiv.innerHTML = `<div class="error">❌ Error: ${data.error || "Error inesperado"}.</div>`;
+            }
+
+            containerDiv.style.paddingBottom = "35px";
+
+            } catch (error) {
+                resultadosDiv.innerHTML = `<div class="error">❌ Error al conectar con el servidor: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

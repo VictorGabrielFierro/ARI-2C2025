@@ -22,17 +22,17 @@ app.use(express.json());
 // Servir archivos estáticos desde ../frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 // Servir certificados
-app.use('/certificados', express.static('/home/manu/Escritorio/TallerBasesDeDatos/certificados'));
+app.use('/certificados', express.static(path.join(__dirname, '../certificados')));
 
 
 // Para que al abrir http://localhost:3000/ vaya directo a index.html
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor AIDA escuchando en http://localhost:${PORT}`);
+    console.log(`Servidor AIDA escuchando en http://localhost:${PORT}`);
 });
 
 // Obtener certificado por LU

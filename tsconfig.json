@@ -34,5 +34,7 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-  }
+  },
+  "include": ["src/**/*", "src/tipos"],       // 🔹 Solo incluye la carpeta src del backend
+  "exclude": ["frontend/**/*"]   // 🔹 Ignora todo lo del frontend
 }

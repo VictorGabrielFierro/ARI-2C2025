@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // Estructura del proyecto
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Target y módulos compatibles con navegadores modernos
+    "target": "ES2020",
+    "module": "ESNext",
+
+    // Librerías del entorno del navegador
+    "lib": ["DOM", "ESNext"],
+
+    // TypeScript estricto y seguro
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Compatibilidad y modularización
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+
+    // Archivos fuente y mapas
+    "sourceMap": true
+  },
+  "include": ["src/**/*"]
+}
