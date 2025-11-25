@@ -1,12 +1,12 @@
 import sql from 'mssql';
-import dbConfigAdmin from './aida-config-admin.js';
 import { ERRORES } from "./constantes/errores.js";
+import { getPool } from './coneccion-bd.js';
+
+
+const pool = await getPool(); // asegurarse que el pool esté conectado
 
 
 export async function obtenerDatosAlumnoPorFecha(fecha: string) {
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-
     try {
         // Obtener los alumnos egresados en fecha
         const alumnos = await pool.request()
@@ -23,15 +23,10 @@ export async function obtenerDatosAlumnoPorFecha(fecha: string) {
             throw error; // Re-lanzás el mismo error
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    } finally {
-        await pool.close();
     }
 }
 
 export async function obtenerDatosAlumnoPorLU(lu: string) {
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-    
     try {
         // Obtener el alumno
         const alumno = await pool.request()
@@ -49,15 +44,10 @@ export async function obtenerDatosAlumnoPorLU(lu: string) {
             throw error; // Re-lanzás el mismo error
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    } finally {
-        await pool.close();
     }
 }
 
 export async function obtenerTablaAlumnos() {
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-    
     try {
         // Obtener el alumno
         const tablaAlumnos = await pool.request()
@@ -67,7 +57,5 @@ export async function obtenerTablaAlumnos() {
         return tablaAlumnos.recordset;
     } catch (error:any) {
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    } finally {
-        await pool.close();
     }
 }

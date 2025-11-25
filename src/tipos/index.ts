@@ -33,3 +33,11 @@ export type ResultadoRespuesta = {
   mensaje: string;
   archivo: string | null;
 };
+
+export interface Usuario {
+    id: number;
+    username: string;
+    nombre?: string;
+    email?: string;
+    rol?: string;
+}

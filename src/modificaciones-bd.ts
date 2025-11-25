@@ -1,14 +1,13 @@
 import sql from 'mssql';
 import fs from 'fs/promises';
-import dbConfigAdmin from './aida-config-admin.js'; 
 import { Alumno } from "./tipos/index.js";
 import { ERRORES } from './constantes/errores.js';
+import { getPool } from './coneccion-bd.js';
+
+
+const pool = await getPool(); // asegurarse que el pool esté conectado
 
 export async function cargarCSV(ruta: string){
-
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-
     try {
         // Leer el CSV
         const contents = await fs.readFile(ruta, 'utf8');
@@ -51,9 +50,6 @@ export async function cargarCSV(ruta: string){
 }
 
 export async function cargarJSON(alumnos: any[]) {
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-
     try {
         if (!Array.isArray(alumnos) || alumnos.length === 0) {
             throw new Error(ERRORES.ARCHIVO_INVALIDO);
@@ -81,15 +77,10 @@ export async function cargarJSON(alumnos: any[]) {
             throw err; // Re-lanzás el mismo error
         }
         throw new Error(ERRORES.INTERNO);
-    } finally {
-        await pool.close();
     }
 }
 
 export async function eliminarAlumnoPorLU(lu: string) {
-    // Conectarse al SQL Server
-    const pool = await sql.connect(dbConfigAdmin);
-    
     try {
         // Eliminar el alumno
         const result = await pool.request()
@@ -107,14 +98,10 @@ export async function eliminarAlumnoPorLU(lu: string) {
             throw error; // Re-lanzás el mismo error
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    } finally {
-        await pool.close();
     }
 }
 
 export async function insertarAlumno(alumno: Alumno) {
-    const pool = await sql.connect(dbConfigAdmin);
-
     try {
         const result = await pool.request()
             .input("lu", sql.NVarChar(50), alumno.lu)
@@ -144,8 +131,6 @@ export async function insertarAlumno(alumno: Alumno) {
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
 
-    } finally {
-        await pool.close();
     }
 }
 
@@ -166,8 +151,6 @@ export async function editarAlumno({
     titulo_en_tramite?: string | null;
     egreso?: string | null;
 }) {
-    const pool = await sql.connect(dbConfigAdmin);
-
     if (!luNuevo) {
         luNuevo = luViejo;
     }
@@ -230,7 +213,5 @@ export async function editarAlumno({
             throw error;
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    } finally {
-        await pool.close();
     }
 }
