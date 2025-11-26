@@ -1,26 +1,35 @@
-import sql from 'mssql';
+// archivo-llamador-corregido.ts
+
+// 1. ⬇️ Cambiamos la importación de 'mssql' por 'pg' para los tipos de Pool
+import { Pool } from 'pg'; 
 import { ERRORES } from "../constantes/errores.js";
 import { getAdminPool } from './conecciones-bd.js';
 
-
-const pool = await getAdminPool(); // asegurarse que el pool esté conectado
+// 2. ⬇️ El pool ahora es de tipo `pg.Pool`
+const pool: Pool = await getAdminPool(); 
 
 
 export async function obtenerDatosAlumnoPorFecha(fecha: string) {
     try {
         // Obtener los alumnos egresados en fecha
-        const alumnos = await pool.request()
-            .input('fecha', sql.Date, fecha)
-            .query('SELECT * FROM aida.alumnos WHERE egreso = @fecha');
+        // Usamos pool.query(query, params)
+        const alumnos = await pool.query(
+            // Cambiamos @fecha por $1
+            `SELECT * FROM "aida"."alumnos" WHERE egreso = $1`, 
+            // ⬇️ PostgreSQL generalmente infiere el tipo de la fecha/string, no es necesario especificar `sql.Date`
+            [fecha] 
+        );
         
-        // Verificar que se encontro el alumno
-        if (alumnos.recordset.length === 0) {
+        // 3. ⬇️ Usamos result.rows.length en lugar de result.recordset.length
+        if (alumnos.rows.length === 0) {
             throw new Error(ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO);
         }
-        return alumnos.recordset; // devolver todos los alumnos
+        
+        // 4. ⬇️ Devolvemos result.rows en lugar de result.recordset
+        return alumnos.rows; 
     } catch (error:any) {
         if (error.message === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
-            throw error; // Re-lanzás el mismo error
+            throw error;
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
     }
@@ -29,19 +38,22 @@ export async function obtenerDatosAlumnoPorFecha(fecha: string) {
 export async function obtenerDatosAlumnoPorLU(lu: string) {
     try {
         // Obtener el alumno
-        const alumno = await pool.request()
-            .input('lu', sql.VarChar, lu)
-            .query('SELECT * FROM aida.alumnos WHERE lu = @lu');
+        const alumno = await pool.query(
+            // Cambiamos @lu por $1
+            `SELECT * FROM "aida"."alumnos" WHERE lu = $1`, 
+            [lu]
+        );
         
         // Verificar que se encontro el alumno
-        if (alumno.recordset.length === 0) {
+        if (alumno.rows.length === 0) {
             throw new Error(ERRORES.ALUMNO_NO_ENCONTRADO);
         }
-        // Devolver objeto alumno
-        return alumno.recordset[0]; 
+        
+        // Devolver objeto alumno (el primer registro)
+        return alumno.rows[0]; 
     } catch (error:any) {
         if (error.message === ERRORES.ALUMNO_NO_ENCONTRADO) {
-            throw error; // Re-lanzás el mismo error
+            throw error;
         }
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
     }
@@ -49,12 +61,14 @@ export async function obtenerDatosAlumnoPorLU(lu: string) {
 
 export async function obtenerTablaAlumnos() {
     try {
-        // Obtener el alumno
-        const tablaAlumnos = await pool.request()
-            .query('SELECT * FROM aida.alumnos');
+        // Obtener la tabla
+        const tablaAlumnos = await pool.query(
+            // Consulta sin parámetros
+            `SELECT * FROM "aida"."alumnos"` 
+        );
         
-        // Devolver la tabla
-        return tablaAlumnos.recordset;
+        // Devolver la tabla completa
+        return tablaAlumnos.rows;
     } catch (error:any) {
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
     }

@@ -1,112 +1,109 @@
 // conecciones-bd.ts
-import sql, { config as SqlConfig, ConnectionPool } from 'mssql';
+
+// 1. ⬇️ Reemplazamos las importaciones de 'mssql' por 'pg'
+import { Pool, PoolConfig } from 'pg'; 
 
 // ------------------ CONFIGURACIONES ------------------
 
+// 2. ⬇️ El objeto de configuración (PoolConfig) es más simple en pg
+// Los parámetros 'encrypt' y 'trustServerCertificate' son específicos de MS SQL Server
+// y se eliminan o se reemplazan por la configuración SSL de PostgreSQL si es necesario.
+// Usaremos la configuración básica.
+
+const baseConfig: PoolConfig = {
+    host: 'localhost',
+    database: 'aida_db',
+    port: 5432, // Puerto estándar de PostgreSQL
+    max: 10,     // Opcional: número máximo de clientes en el pool
+    idleTimeoutMillis: 30000, // Opcional: cuánto tiempo un cliente puede estar inactivo antes de ser desconectado
+};
+
 // Pool para usuario admin
-const dbConfigAdmin: SqlConfig = {
+const dbConfigAdmin: PoolConfig = {
+    ...baseConfig,
     user: 'aida_admin',
     password: 'Admin2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
 };
 
-// Pool para usuario logging (solo tiene permisos de SELECT sobre usuarios)
-const dbConfigLogging: SqlConfig = {
+// Pool para usuario logging
+const dbConfigLogging: PoolConfig = {
+    ...baseConfig,
     user: 'aida_login',
     password: 'Login2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
 };
 
 // Pool para usuario owner
-const dbConfigOwner: SqlConfig = {
+const dbConfigOwner: PoolConfig = {
+    ...baseConfig,
     user: 'aida_owner',
     password: 'Owner2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
 };
 
-// Pool para usuario owner
-const dbConfigAlumno: SqlConfig = {
+// Pool para usuario alumno
+const dbConfigAlumno: PoolConfig = {
+    ...baseConfig,
     user: 'aida_alumno',
     password: 'Alumno2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
 };
 
 // ------------------ POOLS ------------------
 
-let adminPool: ConnectionPool | null = null;
-let loginPool: ConnectionPool | null = null;
-let ownerPool: ConnectionPool | null = null;
-let alumnoPool: ConnectionPool | null = null;
+// 3. ⬇️ El tipo de Pool es `Pool` de 'pg'
+let adminPool: Pool | null = null;
+let loginPool: Pool | null = null;
+let ownerPool: Pool | null = null;
+let alumnoPool: Pool | null = null;
 
 // ------------------ FUNCIONES DE CONEXIÓN ------------------
 
-export async function getAdminPool(): Promise<ConnectionPool> {
+// 4. ⬇️ La conexión se establece directamente al instanciar el Pool en 'pg'
+// No se usa un método `.connect()` asíncrono; el Pool gestiona las conexiones bajo demanda.
+
+export async function getAdminPool(): Promise<Pool> {
     if (!adminPool) {
-        adminPool = await new sql.ConnectionPool(dbConfigAdmin).connect();
+        // En `pg`, el Pool se instancia y se inicializa. Las conexiones se obtienen al hacer .query()
+        adminPool = new Pool(dbConfigAdmin);
+        // Opcional: Una prueba de conexión para asegurarse de que las credenciales son válidas.
+        // await adminPool.query('SELECT 1'); 
     }
     return adminPool;
 }
 
-export async function getLoginPool(): Promise<ConnectionPool> {
+export async function getLoginPool(): Promise<Pool> {
     if (!loginPool) {
-        loginPool = await new sql.ConnectionPool(dbConfigLogging).connect();
+        loginPool = new Pool(dbConfigLogging);
     }
     return loginPool;
 }
 
-export async function getOwnerPool(): Promise<ConnectionPool> {
+export async function getOwnerPool(): Promise<Pool> {
     if (!ownerPool) {
-        ownerPool = await new sql.ConnectionPool(dbConfigOwner).connect();
+        ownerPool = new Pool(dbConfigOwner);
     }
     return ownerPool;
 }
 
-export async function getAlumnoPool(): Promise<ConnectionPool> {
+export async function getAlumnoPool(): Promise<Pool> {
     if (!alumnoPool) {
-        alumnoPool = await new sql.ConnectionPool(dbConfigAlumno).connect();
+        alumnoPool = new Pool(dbConfigAlumno);
     }
     return alumnoPool;
 }
-// Funcion Selectora de Pool
 
-export async function obtenerPoolPorRol(rol?: string): Promise<ConnectionPool> {
+// Funcion Selectora de Pool
+// 5. ⬇️ El tipo de retorno es `Pool`
+export async function obtenerPoolPorRol(rol?: string): Promise<Pool> {
     switch (rol) {
         case 'administrador': 
-            // Si es admin, le damos la conexión con superpoderes
             return await getAdminPool(); 
             
         case 'owner':
-            // Si usas este rol para cosas críticas
             return await getOwnerPool();
 
         case 'usuario':
-            // Si usas este rol para cosas críticas
             return await getAlumnoPool();
 
         default:
-            // Para cualquier otro caso (o si rol es undefined),
-            // damos la conexión restringida de solo lectura/login
             return await getLoginPool();
     }
 }
-
