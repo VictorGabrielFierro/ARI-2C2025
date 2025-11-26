@@ -62,6 +62,12 @@ router.get("/cursa/:lu", verificarTokenMiddleware, async (req: Request, res: Res
             return res.status(400).json({ error: "LU requerida" });
         }
 
+        // Si es admin puede ver cualquier LU; si es usuario solo puede ver su propia LU
+        const requester = (req as any).user;
+        if (requester?.rol !== 'administrador' && requester?.lu !== lu) {
+            return res.status(403).json({ error: 'Acceso denegado' });
+        }
+
         const inscripciones = await obtenerInscripcionesAlumno(lu);
         return res.json(inscripciones);
 
@@ -80,6 +86,12 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
 
         if (!lu || !materiaId || !cuatrimestre) {
             return res.status(400).json({ error: "Datos incompletos" });
+        }
+
+        const requester = (req as any).user;
+        // Allow admins or the owner (lu matches token)
+        if (requester?.rol !== 'administrador' && requester?.lu !== lu) {
+            return res.status(403).json({ error: 'Acceso denegado' });
         }
 
         await inscribirAlumno(lu, materiaId, cuatrimestre);
@@ -105,6 +117,12 @@ router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Resp
 
         if (!lu || !materiaId || !cuatrimestre) {
             return res.status(400).json({ error: "Datos incompletos" });
+        }
+
+        const requester = (req as any).user;
+        // Allow admins or the owner (lu matches token)
+        if (requester?.rol !== 'administrador' && requester?.lu !== lu) {
+            return res.status(403).json({ error: 'Acceso denegado' });
         }
 
         await desinscribirAlumno(lu, materiaId, cuatrimestre);

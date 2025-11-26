@@ -9,13 +9,36 @@
     text-align: center;
 }
 
-.container input {
+.container input,
+.container select {
+    box-sizing: border-box;
+    display: block;
     width: 90%;
     padding: 10px;
     margin: 8px 0;
     border-radius: 6px;
     border: 1px solid #ccc;
     font-size: 16px;
+    background: white;
+}
+
+.container select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* Reserve space for dropdown icon */
+    padding-right: 36px;
+    /* Inline SVG arrow (grey) */
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+}
+
+.container select:focus,
+.container input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.12);
 }
 
 h2 {

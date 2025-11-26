@@ -22,6 +22,7 @@ export async function obtenerMetadataTabla(nombreTabla: string) {
         INNER JOIN sys.index_columns ic 
             ON i.object_id = ic.object_id AND i.index_id = ic.index_id
         WHERE i.is_primary_key = 1 AND i.object_id = OBJECT_ID(@tabla)
+        ORDER BY ic.key_ordinal;
     `;
 
     const [columnasRes, pkRes] = await Promise.all([
@@ -37,7 +38,7 @@ export async function obtenerMetadataTabla(nombreTabla: string) {
         editable: col.identity_column !== 1 // Las identity se consideran no editables
     }));
 
-    const pk = pkRes.recordset[0]?.pk;
+    const pk = pkRes.recordset;
 
     return { table: nombreTabla, pk, columns: columnas };
 }

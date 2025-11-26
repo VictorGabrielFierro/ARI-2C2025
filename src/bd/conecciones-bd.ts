@@ -27,10 +27,23 @@ const dbConfigLogging: SqlConfig = {
     },
 };
 
+// Pool para usuario owner
+const dbConfigOwner: SqlConfig = {
+    user: 'aida_owner',
+    password: 'Owner2025',
+    server: 'localhost',
+    database: 'aida_db',
+    options: {
+        encrypt: true,
+        trustServerCertificate: true,
+    },
+};
+
 // ------------------ POOLS ------------------
 
 let adminPool: ConnectionPool | null = null;
 let loginPool: ConnectionPool | null = null;
+let ownerPool: ConnectionPool | null = null;
 
 // ------------------ FUNCIONES DE CONEXIÓN ------------------
 
@@ -47,3 +60,12 @@ export async function getLoginPool(): Promise<ConnectionPool> {
     }
     return loginPool;
 }
+
+export async function getOwnerPool(): Promise<ConnectionPool> {
+    if (!ownerPool) {
+        ownerPool = await new sql.ConnectionPool(dbConfigOwner).connect();
+    }
+    return ownerPool;
+}
+
+

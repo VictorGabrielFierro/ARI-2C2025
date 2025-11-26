@@ -1,0 +1,42 @@
+#tabla-container {
+    width: 80%;
+    margin: auto;
+    margin-top: 30px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background-color: #004080;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background-color: #e8f0ff;
+}
+
+button.descargar {
+    background-color: #00804A;
+    padding: 8px 14px;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+button.descargar:hover {
+    opacity: 0.85;
+}

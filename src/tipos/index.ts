@@ -37,7 +37,7 @@ export type ResultadoRespuesta = {
 export interface Usuario {
     id: number;
     username: string;
-    nombre?: string;
     email?: string;
-    rol?: string;
+  rol?: string;
+  lu?: string | null;
 }

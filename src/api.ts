@@ -6,6 +6,7 @@ import usuariosRouter from "./routes/usuarios.js";
 import metadataRouter from "./routes/metadata.js";
 import crudGenerico from "./routes/crud-generico.js";
 import inscripcionRouter from "./routes/inscripcion.js";
+import certificadosRouter from "./routes/certificados.js";
 import { verificarTokenMiddleware } from "./auth.js"; // asegurate de la ruta
 
 
@@ -34,6 +35,7 @@ app.use("/api/v0/usuarios", usuariosRouter);
 app.use("/api/v0/metadata", metadataRouter);
 app.use("/api/v0/crud", crudGenerico);
 app.use("/api/v0", inscripcionRouter);
+app.use("/api/v0", certificadosRouter);
 
 // --- Endpoint para validar token ---
 app.get("/api/v0/usuarios/validar-token", verificarTokenMiddleware, (_req, res) => {

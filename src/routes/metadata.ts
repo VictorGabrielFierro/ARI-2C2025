@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { verificarTokenMiddleware } from "../auth.js";
+import { verificarTokenMiddleware, requireRole } from "../auth.js";
 import { obtenerMetadataTabla } from "../bd/metadata.js";
 
 const router = Router();
 
-router.get("/:tabla", verificarTokenMiddleware, async (req, res) => {
+router.get("/:tabla", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     const tabla = req.params.tabla;
 
     if (!tabla) {

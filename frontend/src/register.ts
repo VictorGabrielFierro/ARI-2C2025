@@ -7,6 +7,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    const rolSelect = document.getElementById("rol") as HTMLSelectElement | null;
+    const luInputEl = document.getElementById("lu") as HTMLInputElement | null;
+
+    if (!rolSelect || !luInputEl) {
+        console.error("No se encontró rol o lu en el DOM");
+        return;
+    }
+
+    // Mostrar/ocultar campo LU según rol
+    rolSelect.addEventListener("change", () => {
+        const val = rolSelect.value;
+        if (val === "administrador") {
+            luInputEl.style.display = "none";
+            luInputEl.value = ""; // limpiar LU si se selecciona administrador
+        } else {
+            luInputEl.style.display = "block";
+        }
+    });
+
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -17,19 +36,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const usernameInput = document.getElementById("username") as HTMLInputElement | null;
         const passwordInput = document.getElementById("password") as HTMLInputElement | null;
-        const nameInput = document.getElementById("name") as HTMLInputElement | null;
         const emailInput = document.getElementById("email") as HTMLInputElement | null;
+        const rolInput = document.getElementById("rol") as HTMLSelectElement | null;
+        const luInput = document.getElementById("lu") as HTMLInputElement | null;
 
         const username = usernameInput?.value ?? "";
         const password = passwordInput?.value ?? "";
-        const name = nameInput?.value ?? "";
         const email = emailInput?.value ?? "";
+        const rol = rolInput?.value ?? "";
+        const lu = luInput?.value ?? "";
+
+        // Validación de rol en frontend
+        const allowedRoles = ["usuario", "administrador"];
+        if (!allowedRoles.includes(rol)) {
+            resultadosDivRegister.textContent = "Rol inválido";
+            resultadosDivRegister.className = "error";
+            return;
+        }
 
         try {
             const res = await fetch("/api/v0/usuarios/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password, name, email }),
+                body: JSON.stringify({ username, password, email, rol, lu }),
             });
 
             const data = await res.json();

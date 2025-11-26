@@ -1,3 +1,4 @@
+import { IRecordSet} from "mssql";
 import { checkToken, getAuthHeaders } from "./authCheck.js";
 checkToken();
 
@@ -27,7 +28,7 @@ const tabla = getParam("tabla");           // ej: "materias"
 const singular = getParam("singular");     // ej: "materia"
 const plural = getParam("plural");         // ej: "materias"
 
-let pk: string = "";
+let pk: IRecordSet<any>;
 let columnas: ColMetadata[] = [];
 
 // ----------------------------------------------------------
@@ -65,6 +66,7 @@ async function cargarMetadata() {
     generarTablaHTML();
     generarFormCrear();
     generarFormEditar();
+    generarFormEliminar();
 }
 
 // ----------------------------------------------------------
@@ -127,6 +129,29 @@ function generarFormEditar() {
     form.appendChild(btn);
 
     form.addEventListener("submit", editarRegistro);
+}
+
+// ----------------------------------------------------------
+// GENERAR FORMULARIO DE ELIMINAR
+// ----------------------------------------------------------
+function generarFormEliminar() {
+    const form = document.getElementById("formEliminar") as HTMLFormElement;
+    form.innerHTML = "";
+
+    columnas.forEach(col => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <label>${col.name}</label>
+            <input id="eliminar_${col.name}" type="${tipoInput(col.type)}">
+        `;
+        form.appendChild(div);
+    });
+
+    const btn = document.createElement("button");
+    btn.textContent = "Eliminar";
+    form.appendChild(btn);
+
+    form.addEventListener("submit", eliminarRegistro);
 }
 
 // ----------------------------------------------------------
@@ -224,18 +249,17 @@ async function editarRegistro(e: Event) {
         data[col.name] = (document.getElementById(`editar_${col.name}`) as HTMLInputElement).value || null;
     });
 
-    const id = data[pk];
+    const id = pk
+    .map(col => encodeURIComponent(data[col.pk]))   // obtengo cada valor PK desde data
+    .join("__");  // los concateno con separador
+
 
     try {
-        console.log('antes de jsonear los datos')
         const res = await fetch(`/api/v0/crud/aida.${tabla}/${singular}/${encodeURIComponent(id)}`, {
             method: "PUT",
             headers: getAuthHeaders(),
             body: JSON.stringify(data)
         });
-
-        console.log('despues de jsonear los datos y antes de jsonear el resultado')
-        console.log(res)
         const json = await res.json();
 
         if (!res.ok) throw new Error(json.error || "Error al actualizar");
@@ -253,12 +277,22 @@ async function editarRegistro(e: Event) {
 // ----------------------------------------------------------
 // ELIMINAR REGISTRO
 // ----------------------------------------------------------
-export async function eliminarRegistro() {
+export async function eliminarRegistro(e: Event) {
+    e.preventDefault();
     const mensaje = document.getElementById("mensajeModalEliminar")!;
-    const id = (document.getElementById("pkEliminar") as HTMLInputElement).value;
+    const data: any = {};
+
+    columnas.forEach(col => {
+        data[col.name] = (document.getElementById(`eliminar_${col.name}`) as HTMLInputElement).value || null;
+    });
+
+    const id = pk
+    .map(col => encodeURIComponent(data[col.pk]))   // obtengo cada valor PK desde data
+    .join("__");  // los concateno con separador
+
 
     try {
-        const res = await fetch(`/api/v0/crud/aida.${tabla}/${plural}/${encodeURIComponent(id)}`, {
+        const res = await fetch(`/api/v0/crud/aida.${tabla}/${plural}/${id}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });

@@ -7,7 +7,7 @@ import { obtenerTablaAlumnos } from "../bd/consultas-alumnos.js"
 import { ResultadoRespuesta } from "../tipos/index.js";
 import { ERRORES } from "../constantes/errores.js";
 import { EXITOS } from "../constantes/exitos.js";
-import { verificarTokenMiddleware } from "../auth.js";
+import { verificarTokenMiddleware, requireRole } from "../auth.js";
 
 
 const router = Router();
@@ -26,10 +26,14 @@ router.get("/lu/:lu", verificarTokenMiddleware, async (req: Request, res: Respon
 
     const LU = luParam.trim();
 
-    try {
+        try {
         if(!validarLU(LU)){
             return res.status(400).json({ error: ERRORES.LU_INVALIDA });
         } 
+        const requester = (req as any).user;
+        if (requester?.rol !== 'administrador' && requester?.lu !== LU) {
+            return res.status(403).json({ error: 'Acceso denegado' });
+        }
         
         const resultadoTitulo = await generarTituloPorLU(LU, salida);
         if (resultadoTitulo.error == null) {
@@ -66,7 +70,7 @@ router.get("/lu/:lu", verificarTokenMiddleware, async (req: Request, res: Respon
 });
 
 // Obtener certificados por fecha
-router.get("/fecha/:fecha", verificarTokenMiddleware, async (req: Request, res: Response) => {
+router.get("/fecha/:fecha", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const fechaPAram = req.params.fecha;
 
     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
@@ -112,7 +116,7 @@ router.get("/fecha/:fecha", verificarTokenMiddleware, async (req: Request, res: 
 });
 
 // Cargar alumnos desde archivo (JSON)
-router.patch("/archivo", verificarTokenMiddleware, async (req: Request, res: Response) => {
+router.patch("/archivo", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const alumnos = req.body;
     try {
         // Verificar que no esté vacío
@@ -142,7 +146,7 @@ router.patch("/archivo", verificarTokenMiddleware, async (req: Request, res: Res
 })
 
 // Obtener tabla alumnos
-router.get("/alumnos", verificarTokenMiddleware, async (_: Request, res: Response) => {
+router.get("/alumnos", verificarTokenMiddleware, requireRole('administrador'), async (_: Request, res: Response) => {
     try {
         const alumnos = await obtenerTablaAlumnos(); 
         res.json(alumnos); 
@@ -153,7 +157,7 @@ router.get("/alumnos", verificarTokenMiddleware, async (_: Request, res: Respons
 
 
 // Eliminar un alumno
-router.delete("/alumnos/:lu", verificarTokenMiddleware, async (req: Request, res: Response) => {
+router.delete("/alumnos/:lu", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const luParam = req.params.lu;
 
     // Verifico que lu no sea undefined, null o vacio y quito espacios al final
@@ -186,7 +190,7 @@ router.delete("/alumnos/:lu", verificarTokenMiddleware, async (req: Request, res
 });
 
 // Crear un alumno
-router.post("/alumno", verificarTokenMiddleware, async (req: Request, res: Response) => {
+router.post("/alumno", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const { lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;
     const reglasValidacion = {
         lu: false,
@@ -235,7 +239,7 @@ router.post("/alumno", verificarTokenMiddleware, async (req: Request, res: Respo
 });
 
 // Editar un alumno
-router.put("/alumno/:lu", verificarTokenMiddleware, async (req: any, res: Response) => {
+router.put("/alumno/:lu", verificarTokenMiddleware, requireRole('administrador'), async (req: any, res: Response) => {
     try {
         const luViejo = decodeURIComponent(req.params.lu); // LU vieja
         const { luNuevo: lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;;

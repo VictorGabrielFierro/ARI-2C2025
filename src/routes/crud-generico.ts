@@ -1,48 +1,41 @@
 import { Router } from "express";
-import { verificarTokenMiddleware } from "../auth.js";
+import { verificarTokenMiddleware, requireRole } from "../auth.js";
 import { obtenerMetadataTabla } from "../bd/metadata.js";
-import { getAdminPool } from "../bd/conecciones-bd.js";
+import { getOwnerPool } from "../bd/conecciones-bd.js";
 import sql from "mssql";
+import {
+    buildSelectAllQuery,
+    //buildSelectQuery,
+    buildWherePk,
+    buildInsertQuery,
+    buildUpdateQuery,
+    buildDeleteQuery
+} from "../bd/queries-genericas.js"
 
 const router = Router();
 
-/**
- * Helper: arma query SELECT * FROM tabla
- */
-function buildSelectAllQuery(tabla: string) {
-    return `SELECT * FROM ${tabla}`;
-}
 
-/**
- * Helper: arma WHERE pk = @pk
- */
-function buildWherePk(pkCol: string) {
-    return `WHERE ${pkCol} = @pk`;
-}
+// async function egresarAlumnoAutomaticamente(lu:string){
 
-/**
- * Helper: arma INSERT dinámico
- */
-function buildInsertQuery(tabla: string, cols: string[]) {
-    const columnas = cols.join(", ");
-    const valores = cols.map(c => `@${c}`).join(", ");
-    return `INSERT INTO ${tabla} (${columnas}) VALUES (${valores})`;
-}
+//     const pool = await getAdminPool();
 
-/**
- * Helper: arma UPDATE dinámico
- */
-function buildUpdateQuery(tabla: string, cols: string[], pkCol: string) {
-    const sets = cols.map(c => `${c} = @${c}`).join(", ");
-    return `UPDATE ${tabla} SET ${sets} WHERE ${pkCol} = @pk`;
-}
+//     const carrera = pool.request().query(`SELECT CarreraId FROM aida.estudiante_de WHERE lu = ${lu}`)
 
-/**
- * Helper: DELETE
- */
-function buildDeleteQuery(tabla: string, pkCol: string) {
-    return `DELETE FROM ${tabla} WHERE ${pkCol} = @pk`;
-}
+//     const materiasFaltantesAlumno = pool.request().query(`(SELECT MateriaId 
+//         FROM aida.plan_de_estudios 
+//         WHERE CarreraId = ${(await carrera).recordset[0]}) 
+//         EXCEPT (
+//         SELECT MateriaId
+//         FROM aida.cursa
+//         WHERE lu = ${lu} AND NotaFinal >= 4
+//         )`) 
+
+//     if ((await materiasFaltantesAlumno).recordset.length == 0){
+//         pool.request().query(`UPDATE aida.alumnos 
+//         SET egreso = GETDATE(), titulo_en_tramite = GETDATE()
+//         WHERE lu = ${lu}`)
+//     }
+// }
 
 /**
  * 🚨 RUTA GENÉRICA CRUD
@@ -55,14 +48,14 @@ function buildDeleteQuery(tabla: string, pkCol: string) {
  * PUT    /crud/:tabla/:singular/:id
  * DELETE /crud/:tabla/:plural/:id
  */
-router.get("/:tabla/:plural", verificarTokenMiddleware, async (req, res) => {
+router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         if (!tabla) {
         return res.status(400).json({ error: "Falta el nombre de la tabla" });
         }
 
-        const pool = await getAdminPool();
+        const pool = await getOwnerPool();
         const result = await pool.request().query(buildSelectAllQuery(tabla));
 
         return res.json(result.recordset);
@@ -72,10 +65,10 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, async (req, res) => {
     }
 });
 
-router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) => {
+router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        const id = req.params.id;
+        const id = req.params.id?.split("__").map(decodeURIComponent);
 
         if (!tabla) {
         return res.status(400).json({ error: "Falta el nombre de la tabla" });
@@ -84,11 +77,16 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         const meta = await obtenerMetadataTabla(tabla);
         const pk = meta.pk;
 
-        const pool = await getAdminPool();
+        const pool = await getOwnerPool();
 
-        const result = await pool.request()
-            .input("pk", sql.NVarChar, id)
-            .query(`${buildSelectAllQuery(tabla)} ${buildWherePk(pk)}`);
+        const request = await pool.request();
+            //.input("pk", sql.NVarChar, id)
+            //.query(`${buildSelectAllQuery(tabla)} ${buildWherePk(pk)}`);
+        
+        pk.forEach((p,indice) => request.input(p.pk, sql.NVarChar, id?.[indice]));
+        let stringQuery = `${buildSelectAllQuery(tabla)}`;
+        pk.forEach(p => stringQuery.concat(` ${buildWherePk(p.pk, p.pk)}`));
+        const result = await request.query(stringQuery);
 
         if (!result.recordset.length)
             return res.status(404).json({ error: "No encontrado" });
@@ -100,7 +98,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
     }
 });
 
-router.post("/:tabla/:singular", verificarTokenMiddleware, async (req, res) => {
+router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const body = req.body;
@@ -115,7 +113,7 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, async (req, res) => {
             .filter(c => !c.identity)
             .map(c => c.name);
 
-        const pool = await getAdminPool();
+        const pool = await getOwnerPool();
 
         const request = pool.request();
         columnasInsertables.forEach(c => {
@@ -131,10 +129,10 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, async (req, res) => {
     }
 });
 
-router.put("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) => {
+router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        const id = req.params.id;
+        const id = req.params.id?.split('__').map(decodeURIComponent);
         const body = req.body;
 
         if (!tabla) {
@@ -142,21 +140,27 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         }
 
         const meta = await obtenerMetadataTabla(tabla);
-        const pk = meta.pk;
+        const pk = meta.pk.map(p => p.pk);
 
         const columnasEditables = meta.columns
-            .filter(c => !c.identity)
+            .filter(c => !pk.includes(c.name))
             .map(c => c.name);
 
-        const pool = await getAdminPool();
+        const pool = await getOwnerPool();
         const request = pool.request();
 
-        request.input("pk", sql.NVarChar, id);
+        // request.input("pk", sql.NVarChar, id);
+
+        pk.forEach((p,indice) => request.input(p, sql.NVarChar, id?.[indice]));
         columnasEditables.forEach(c => {
             request.input(c, sql.NVarChar, body[c] ?? null);
         });
 
         await request.query(buildUpdateQuery(tabla, columnasEditables, pk));
+
+        if (tabla == 'cursa'){
+            console.log(id)
+        }
 
         return res.json({ mensaje: "Registro actualizado" });
     } catch (err) {
@@ -165,10 +169,10 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
     }
 });
 
-router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, async (req, res) => {
+router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        const id = req.params.id;
+        const id = req.params.id?.split('__').map(decodeURIComponent);
 
         if (!tabla) {
         return res.status(400).json({ error: "Falta el nombre de la tabla" });
@@ -177,11 +181,13 @@ router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, async (req, res) 
         const meta = await obtenerMetadataTabla(tabla);
         const pk = meta.pk;
 
-        const pool = await getAdminPool();
-        await pool.request()
-            .input("pk", sql.NVarChar, id)
-            .query(buildDeleteQuery(tabla, pk));
 
+        const pool = await getOwnerPool();
+        const request = await pool.request()
+
+        pk.forEach((p,indice) => request.input(p.pk, sql.NVarChar, id?.[indice]));
+
+        await request.query(buildDeleteQuery(tabla, pk.map(p => p.pk)));
         return res.json({ mensaje: "Registro eliminado" });
     } catch (err) {
         console.error(err);

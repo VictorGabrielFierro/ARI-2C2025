@@ -24,11 +24,11 @@ export async function autenticarUsuario(pool: ConnectionPool, username: string, 
     if (!match) return null;
 
     return {
-        id: user.id,
-        username: user.username,
-        nombre: user.nombre,
-        email: user.email,
-        rol: user.rol
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      rol: user.rol,
+      lu: user.lu || null
     };
 }
 
@@ -47,11 +47,32 @@ export function verificarTokenMiddleware(req: Request, res: Response, next: Next
   }
 
   try {
-    jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    // Attach decoded user info to request for downstream handlers
+    req.user = {
+      id: payload.id,
+      username: payload.username,
+      rol: payload.rol,
+      lu: payload.lu ?? null,
+    };
     return next();
   } catch (err) {
     return res.status(403).json({ error: "Token inválido" });
   }
+}
+
+// Middleware factory para exigir roles
+export function requireRole(...allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user || !user.rol) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+    if (!allowedRoles.includes(user.rol)) {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+    return next();
+  };
 }
 
 
