@@ -15,6 +15,7 @@ const router = Router();
 
 router.post("/register", async (req, res) => {
     const { username, password, email, rol, lu } = req.body;
+    const luParam = rol === "administrador" ? null : lu;
     try {
         // Validar rol y LU en backend por seguridad
         const allowedRoles = ["usuario", "administrador"];
@@ -71,7 +72,7 @@ router.post("/register", async (req, res) => {
             // Sin embargo, si queremos replicar la lógica de MSSQL (que intenta identificar
             // qué columna falló comparando el valor duplicado), debemos usar las consultas PG.
             
-            const detail: string = err.detail || ''; // PostgreSQL incluye detalles del error
+            //const detail: string = err.detail || ''; // PostgreSQL incluye detalles del error
 
             try {
                 // 7. ⬇️ Comprobación en la BD usando la sintaxis PG

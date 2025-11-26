@@ -128,7 +128,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
 
         // Inyectamos valores y preparamos condiciones WHERE (col = $n)
         idParts.forEach((id, index) => {
-            const pkName = pkInfo[index].pk;
+            const pkName = pkInfo[index]?.pk;
             params.push(id);
             // El placeholder en PostgreSQL es posicional ($1, $2, ...)
             whereConditions.push(`"${pkName}" = $${index + 1}`); 
