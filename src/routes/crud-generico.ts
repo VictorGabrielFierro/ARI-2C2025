@@ -114,8 +114,8 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         const result = await request.query(stringQuery);
 
 
-        if (!result.recordset.length)
-            return res.status(404).json({ error: "No encontrado" });
+        // if (!result.recordset.length)
+        //     return res.status(404).json({ error: "No encontrado" });
 
         // Retornamos el objeto solo (no array)
         return res.json(result.recordset); 

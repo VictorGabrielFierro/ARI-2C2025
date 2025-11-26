@@ -5,6 +5,17 @@ GO
 CREATE SCHEMA aida AUTHORIZATION aida_owner;
 GO
 
+-- Crear tabla alumnos
+CREATE TABLE aida.alumnos (
+    lu NVARCHAR(50) PRIMARY KEY,
+    apellido NVARCHAR(50) NOT NULL,
+    nombres NVARCHAR(50) NOT NULL,
+    titulo NVARCHAR(100) NULL,
+    titulo_en_tramite DATE NULL,
+    egreso DATE NULL
+);
+GO
+
 -- Crear tabla materias
 CREATE TABLE aida.materias (
     MateriaId INT PRIMARY KEY,
@@ -82,6 +93,9 @@ CREATE TABLE aida.cursa (
 GO
 
 -- Dar permisos mínimos al usuario de la app
+GRANT SELECT, INSERT, UPDATE, DELETE ON aida.alumnos TO aida_admin;
+GO
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.cursa TO aida_admin;
 GO
 
