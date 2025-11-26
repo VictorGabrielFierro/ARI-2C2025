@@ -1,7 +1,7 @@
 export function checkToken() {
     const token = localStorage.getItem("token");
     if (!token) {
-        window.location.href = "../";
+        window.location.href = "./index.html";
     }
 }
 export function getAuthHeaders(contentType = "application/json") {

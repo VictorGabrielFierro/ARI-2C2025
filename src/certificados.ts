@@ -44,14 +44,23 @@ export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
         return resultadoTitulo
     }
     try {
+        //reviso que exista la carpeta de salida, si no existe la creo
+        const outputDir = path.join(process.cwd(), carpetaSalida);
+        await fs.mkdir(outputDir, { recursive: true });
+
         // Busco la ruta del archivo actual
         const __filename = fileURLToPath(import.meta.url);
         // Busco la carpeta del archivo actual
         const __dirname = path.dirname(__filename);
 
+        console.log("filename: " + __filename)
+        console.log("dirname: " + __dirname)
+
         // Leo el html
         const plantillaPath = path.join(__dirname, '..', 'recursos', 'plantilla-certificado-titulo.html');
         let html = await fs.readFile(plantillaPath, 'utf8');
+
+        console.log("Plantilla leida correctamente")
 
         // Reemplazo los datos que obtuve
         html = html.replace(/\[NOMBRE\]/g, alumno.nombres)
@@ -66,9 +75,13 @@ export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
         const nombreArchivo = `titulo_${sanitizedLU}.html`
         const filePath = path.join(__dirname, '..', carpetaSalida, nombreArchivo);
         
+        console.log("Generando archivo en: " + filePath)
+
         // Guardar el HTML
         await fs.writeFile(filePath, html);
         resultadoTitulo.archivo = path.join(carpetaSalida, nombreArchivo);
+
+        console.log("Archivo generado correctamente: " + resultadoTitulo.archivo)
 
         return resultadoTitulo
 

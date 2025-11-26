@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción a Materias</title>
+
+    <link rel="stylesheet" href="./styles/global.css" />
+    <link rel="stylesheet" href="./styles/inscripcion.css" />
+</head>
+
+<body>
+
+    <h1>Inscripción a Materias</h1>
+    <h2>Seleccione una materia para ver más información</h2>
+
+    <div id="contenido" class="contenedor">
+
+        <!-- PANEL IZQUIERDO -->
+        <div class="panel izquierda">
+            <h3>Materias Disponibles</h3>
+            <ul id="listaMaterias" class="lista"></ul>
+        </div>
+
+        <!-- PANEL CENTRAL -->
+        <div class="panel centro">
+            <h3 id="tituloMateria">Seleccione una materia</h3>
+
+            <div id="infoCursada" class="info-box">
+                <!-- Aquí se cargará la información -->
+            </div>
+
+            <button id="btnAccion" class="btn-accion" style="display:none;"></button>
+        </div>
+
+        <!-- PANEL DERECHO -->
+        <div class="panel derecha">
+            <h3>Materias Inscripto</h3>
+            <ul id="listaInscripto" class="lista"></ul>
+        </div>
+
+    </div>
+
+    <script type="module" src="./dist/inscripcion.js"></script>
+</body>
+</html>

@@ -11,14 +11,18 @@ const router = Router();
 
 
 router.post("/register", async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, nombre, email, rol, lu } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         await pool
             .request()
             .input("username", username)
-            .input("password", hashedPassword)
-            .query("INSERT INTO usuarios (username, password) VALUES (@username, @password)");
+            .input("password_hash", hashedPassword)
+            .input("name", nombre)
+            .input("email", email)
+            .input("rol", rol)
+            .input("lu", lu)
+            .query("INSERT INTO usuarios (username, password_hash) VALUES (@username, @password_hash)");
         res.status(201).json({ message: "Usuario creado con éxito" });
     } catch (err: any) {
         console.error(err);

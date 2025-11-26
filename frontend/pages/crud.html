@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRUD Genérico - AIDA</title>
+
+    <link rel="stylesheet" href="./styles/global.css">
+    <link rel="stylesheet" href="./styles/alumnos.css"> <!-- mismo estilo -->
+</head>
+<body>
+
+    <div class="selector-container" style="margin: 20px;">
+        <label for="selectorTablas" style="font-weight:bold;">Elegir tabla:</label>
+
+        <select id="selectorTablas">
+            <option value="alumnos|alumno|alumnos">Alumnos</option>
+            <option value="materias|materia|materias">Materias</option>
+            <option value="carreras|carrera|carreras">Carreras</option>
+            <option value="correlativas|correlativa|correlativas">Correlativas</option>
+            <option value="cursadas|cursada|cursadas">Cursadas</option>
+            <option value="cursa|cursa|cursas">Cursadas de Estudiantes</option>
+            <option value="estudiante_de|estudiante_de|estudiantes_de">Carreras de Estudiantes</option>
+            <option value="plan_de_estudios|plan_de_estudios|planes_de_estudio">Planes de Estudio</option>
+        </select>
+    </div>
+
+    <h1 id="tituloCrud">CRUD</h1>
+
+    <div class="main-container">
+        <div class="menu">
+            <button onclick="abrirModal('modalCrear')">Crear</button>
+            <button onclick="abrirModal('modalEditar')">Editar</button>
+            <button onclick="abrirModal('modalEliminar')">Eliminar</button>
+            <button onclick="window.location.href='./menuAdministrador.html'">Volver al menú</button>
+        </div>
+
+        <div class="content">
+            <table id="tablaGenerica">
+                <thead>
+                    <tr id="thead"></tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+
+            <div id="mensaje" class="mensaje"></div>
+        </div>
+    </div>
+
+    <!-- Modal Crear -->
+    <div id="modalCrear" class="modal">
+        <div class="modal-content">
+            <span class="cerrar" onclick="cerrarModal('modalCrear')">&times;</span>
+            <h3 id="tituloCrear">Crear</h3>
+            <form id="formCrear"></form>
+            <p id="mensajeModalCrear" class="mensaje"></p>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div id="modalEditar" class="modal">
+        <div class="modal-content">
+            <span class="cerrar" onclick="cerrarModal('modalEditar')">&times;</span>
+            <h3 id="tituloEditar">Editar</h3>
+            <form id="formEditar"></form>
+            <p id="mensajeModalEditar" class="mensaje"></p>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar -->
+    <div id="modalEliminar" class="modal">
+        <div class="modal-content">
+            <span class="cerrar" onclick="cerrarModal('modalEliminar')">&times;</span>
+            <h3 id="tituloEliminar">Eliminar</h3>
+
+            <input type="text" id="pkEliminar" placeholder="Ingrese valor de la PK">
+            <button onclick="eliminarRegistro()" style="background-color:#e74c3c;">Eliminar</button>
+
+            <p id="mensajeModalEliminar" class="mensaje"></p>
+        </div>
+    </div>
+
+    <script src="./dist/crud.js" type="module"></script>
+</body>
+</html>

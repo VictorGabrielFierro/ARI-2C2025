@@ -1,20 +1,32 @@
+/* ======== menu.css ======== */
 .container {
     background: white;
-    padding: 25px 35px;
+    padding: 30px 40px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     width: 400px;
-    margin-top: 30px;
+    margin-top: 40px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
-.container { 
-    background: white;
-    padding: 25px 35px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    width: 400px;
-    margin-top: 30px;
-    text-align: center;
+
+button {
+    width: 80%;
+    margin: 10px 0;
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background-color: #3498db;
+    color: white;
+    transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: #2980b9;
 }
 
 h2 {
@@ -22,9 +34,4 @@ h2 {
     color: #34495e;
     text-align: center;
     font-weight: normal;
-}
-
-button {
-    margin: 10px 0;
-    width: 80%;
 }

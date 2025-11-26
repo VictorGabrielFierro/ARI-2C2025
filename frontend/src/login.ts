@@ -10,11 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        // Logs de depuración
-        console.log("Submit disparado");
-        console.log("Formulario:", form);
-        console.log("Div mensajes:", resultadosDivLogin);
-
         const usernameInput = document.getElementById("username") as HTMLInputElement | null;
         const passwordInput = document.getElementById("password") as HTMLInputElement | null;
 
@@ -34,10 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 resultadosDivLogin.textContent = "Login exitoso!";
                 resultadosDivLogin.className = "success";
                 localStorage.setItem("token", data.token);
+                localStorage.setItem("lu",'369/23');
 
                 // Redirigir al menú principal
                 setTimeout(() => {
-                    window.location.href = "./pages/index.html"; // o la ruta relativa correcta al menú
+                    window.location.href = "./menuAdministrador.html"; // o la ruta relativa correcta al menú
                 }, 1000); // espera 1 segundo para que el usuario vea el mensaje
             }
             else {
