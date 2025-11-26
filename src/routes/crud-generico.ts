@@ -235,15 +235,8 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
 router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        const rawId = req.params.id;
+        // Decodificamos el ID
         const idParts = req.params.id?.split('__').map(decodeURIComponent);
-
-        // --- DEBUG START ---
-        console.log(`\n🟠 --- INICIO DELETE DEBUG ---`);
-        console.log(`1. Tabla objetivo: ${tabla}`);
-        console.log(`2. ID Recibido (URL): ${rawId}`);
-        console.log(`3. ID Parseado:`, idParts);
-        // --- DEBUG END ---
 
         const userRole = req.user?.rol;
         const pool = await obtenerPoolPorRol(userRole);
@@ -251,40 +244,40 @@ router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('admi
         if (!pool) return res.status(500).json({ error: "No hay conexión" });
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
+        // 1. Lógica de seguridad para tabla 'usuarios' (si la implementaste antes)
+        if (tabla.includes('usuarios') && userRole === 'administrador') {
+             // Si el admin no debe borrar usuarios, aquí iría el bloqueo o cambio de pool
+             // Si ya manejas el pool dinámico arriba, ignora esto.
+        }
+
         const meta = await obtenerMetadataTabla(tabla);
-        const pk = meta.pk; // Array de objetos
+        const pk = meta.pk;
 
-        console.log(`4. Metadata PKs:`, pk.map(p => p.pk)); // DEBUG
-
-        // Validación extra de seguridad
+        // Validación de cantidad de IDs vs PKs
         if (!idParts || idParts.length !== pk.length) {
-            console.error(`❌ Error: Cantidad de IDs (${idParts?.length}) no coincide con PKs (${pk.length})`);
             return res.status(400).json({ error: "ID inválido para esta tabla" });
         }
 
         const request = await pool.request();
 
+        // Asignación de parámetros
         pk.forEach((p, indice) => {
             const valor = idParts?.[indice];
-            console.log(`   -> Asignando Param: @${p.pk} = '${valor}'`); // DEBUG
             request.input(p.pk, sql.NVarChar, valor);
         });
 
+        // Ejecución
         const querySql = buildDeleteQuery(tabla, pk.map(p => p.pk));
-        console.log(`5. SQL Generado: ${querySql}`); // DEBUG
-
         const result = await request.query(querySql);
-        console.log(`6. Rows Affected:`, result.rowsAffected); // DEBUG
-        console.log(`🔴 --- FIN DELETE DEBUG ---\n`);
 
-        // Verificamos si realmente se borró algo
+        // Verificación de éxito
         if (result.rowsAffected[0] === 0) {
             return res.status(404).json({ error: "El registro no existe o no se pudo eliminar." });
         }
 
         return res.json({ mensaje: "Registro eliminado" });
     } catch (err) {
-        console.error("❌ ERROR DELETE:", err);
+        console.error("Error en DELETE:", err);
         return res.status(500).json({ error: "Error al eliminar registro" });
     }
 });

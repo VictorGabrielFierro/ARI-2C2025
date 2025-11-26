@@ -129,10 +129,34 @@ function generarFormEditar() {
     const form = document.getElementById("formEditar") as HTMLFormElement;
     form.innerHTML = "";
 
+    const sonTodasPK = columnas.every(col => pk.some(p => p.pk === col.name));
+
+    if (sonTodasPK) {
+        // CASO ESPECIAL: No hay campos editables reales
+        const mensaje = document.createElement("p");
+        mensaje.textContent = "No se permite editar. Elimine y cree otro.";
+        mensaje.style.color = "red"; 
+        
+        form.appendChild(mensaje);
+        
+        // Importante: Hacemos return para NO agregar inputs ni el botón de guardar
+        return; 
+    }
+
     columnas.forEach(col => {
+        // 1. VERIFICAMOS SI ES PK
+        const esPK = pk.some(p => p.pk === col.name);
+
         const div = document.createElement("div");
+        
+        /// 2. Lógica del Label:
+        //    - Si es PK    -> Muestra "Nombre (Identificador)"
+        //    - Si no es PK -> Muestra "Nuevo Nombre"
+        
+        const textoLabel = esPK ? `${col.name} (Identificador)` : `Nuevo ${col.name}`;
+
         div.innerHTML = `
-            <label>${col.name}</label>
+            <label>${textoLabel}</label>
             <input id="editar_${col.name}" type="${tipoInput(col.type)}">
         `;
         form.appendChild(div);
@@ -152,12 +176,17 @@ function generarFormEliminar() {
     const form = document.getElementById("formEliminar") as HTMLFormElement;
     form.innerHTML = "";
 
-    columnas.forEach(col => {
+    // FILTRO: Solo procesamos las columnas que son PK
+    const columnasPK = columnas.filter(col => pk.some(p => p.pk === col.name));
+
+    columnasPK.forEach(col => {
         const div = document.createElement("div");
         div.innerHTML = `
             <label>${col.name}</label>
             <input id="eliminar_${col.name}" type="${tipoInput(col.type)}">
         `;
+        // Nota: Le puse 'readonly' y un color rojizo porque 
+        // generalmente uno no "escribe" el ID a borrar, sino que lo selecciona de la tabla.
         form.appendChild(div);
     });
 
@@ -306,19 +335,26 @@ export async function eliminarRegistro(e: Event) {
     const mensaje = document.getElementById("mensajeModalEliminar")!;
     const data: any = {};
 
-    // Obtenemos los valores de los inputs del formulario eliminar
-    columnas.forEach(col => {
-        const val = (document.getElementById(`eliminar_${col.name}`) as HTMLInputElement).value;
-        data[col.name] = val;
+    // 1. SOLUCIÓN DEL ERROR:
+    // Solo intentamos leer los inputs que realmente existen en el formulario (las PKs).
+    // Si intentamos leer una columna normal (ej: 'nombre'), el input no existe y daba error.
+    
+    // Filtramos solo las columnas que son PK
+    const columnasPK = columnas.filter(col => pk.some(p => p.pk === col.name));
+
+    columnasPK.forEach(col => {
+        const input = document.getElementById(`eliminar_${col.name}`) as HTMLInputElement;
+        if (input) {
+            data[col.name] = input.value;
+        }
     });
 
-    // Construimos el ID codificando CADA PARTE por separado
+    // 2. Construimos el ID para la URL
     const idUrl = pk
         .map(col => encodeURIComponent(data[col.pk])) 
         .join("__");
 
     try {
-        // Usamos idUrl directo
         const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
             method: "DELETE",
             headers: getAuthHeaders()
@@ -332,6 +368,10 @@ export async function eliminarRegistro(e: Event) {
         mensaje.textContent = json.mensaje;
 
         cargarRegistros();
+        
+        // Opcional: Limpiar mensaje después de unos segundos
+        setTimeout(() => { mensaje.textContent = ""; }, 3000);
+
     } catch (err: any) {
         mensaje.style.color = "red";
         mensaje.textContent = err.message;
