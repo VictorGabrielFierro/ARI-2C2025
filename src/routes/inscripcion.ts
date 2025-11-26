@@ -56,7 +56,7 @@ router.get("/cursadas/ultima/:materiaId", verificarTokenMiddleware, async (req: 
    ================================================= */
 router.get("/cursa/:lu", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const lu = req.params.lu;
+        const lu = req.user?.lu;
 
         if (!lu) {
             return res.status(400).json({ error: "LU requerida" });

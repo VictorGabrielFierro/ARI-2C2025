@@ -26,16 +26,7 @@ export function buildSelectAllQuery(tabla: string, pkCols: string[]) {
     return `${base} ORDER BY ${orderBy} ASC`; 
 }
 
-<<<<<<< HEAD
-// arma WHERE pk = @pk
-export function buildWherePk(pkCol: string, pkVar: string) {
-    return ` WHERE ${pkCol} = @${pkVar}`;
-}
-
-// arma INSERT dinámico
-=======
 // 3. INSERT
->>>>>>> refactorizando-CRUD-generico
 export function buildInsertQuery(tabla: string, cols: string[]) {
     const columnas = cols.map(c => w(c)).join(", ");
     const valores = cols.map(c => `@${c}`).join(", ");

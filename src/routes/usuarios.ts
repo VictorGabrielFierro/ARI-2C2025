@@ -109,7 +109,7 @@ router.post("/login", async (req, res) => {
         // No la hacemos HttpOnly porque el frontend también la usa para redirección UX (localStorage se sigue usando)
         res.cookie("token", token, { sameSite: 'lax', path: '/' });
 
-        return res.json({ message: "Login exitoso", token });
+        return res.json({ message: "Login exitoso", token});
 
     } catch (err) {
         console.error(err);

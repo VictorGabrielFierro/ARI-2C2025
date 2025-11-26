@@ -48,20 +48,7 @@ async function egresarAlumnoAutomaticamente(lu:string, pool:ConnectionPool){
 }
 
 /**
-<<<<<<< Updated upstream
- * 🚨 RUTA GENÉRICA CRUD
- *
- * Todas las operaciones son:
- *
- * GET    /crud/:tabla/:plural
- * GET    /crud/:tabla/:plural/:id
- * GET    /crud/:tabla/:singular/:id
- * POST   /crud/:tabla/:singular
- * PUT    /crud/:tabla/:singular/:id
- * DELETE /crud/:tabla/:plural/:id
-=======
  * RUTAS CRUD
->>>>>>> Stashed changes
  */
 
 // ---------------- GET ALL ----------------
@@ -89,39 +76,7 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
     }
 });
 
-<<<<<<< HEAD
-// router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
-//     try {
-//         const tabla = req.params.tabla;
-//         const id = req.params.id?.split("__").map(decodeURIComponent);
-
-//         if (!tabla) {
-//         return res.status(400).json({ error: "Falta el nombre de la tabla" });
-//         }
-
-//         const meta = await obtenerMetadataTabla(tabla);
-//         const pk = meta.pk.map(p => p.pk);
-
-//         const pool = await getOwnerPool();
-//         const request = await pool.request()//.query(buildSelectAllQuery(tabla));
-
-//         id?.forEach((val,indice) => request.input)
-
-//         pk.forEach((p,indice) => request.input(p.pk, sql.NVarChar, id?.[indice]));
-//         let stringQuery = `${buildSelectAllQuery(tabla)}`;
-//         pk.forEach(p => stringQuery.concat(` ${buildWherePk(p.pk, p.pk)}`));
-//         const result = await request.query(stringQuery);
-
-//         return res.json(result.recordset);
-//     } catch (err) {
-//         console.error(err);
-//         return res.status(500).json({ error: "Error al obtener registros" });
-//     }
-// });
-
-=======
 // ---------------- GET ONE ----------------
->>>>>>> refactorizando-CRUD-generico
 router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
@@ -134,18 +89,6 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
-<<<<<<< HEAD
-        const pk = meta.pk.map(p => p.pk);
-
-
-        const request = await pool.request();
-
-        
-        id?.forEach((val,indice) => request.input(pk[indice], sql.NVarChar, val));
-        let stringQuery = `${buildSelectAllQuery(tabla)}`;
-        id?.forEach((_,indice) => stringQuery += buildWherePk(pk[indice], pk[indice]));
-        console.log(stringQuery)
-=======
         const pkInfo = meta.pk; // Array de objetos { pk: "nombreCol" }
 
         // Validación de cantidad de parámetros
@@ -165,19 +108,14 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         // Usamos SelectBase (SIN Order By) + WHERE construído con AND
         const stringQuery = `${buildSelectBaseQuery(tabla)} WHERE ${whereConditions.join(" AND ")}`;
         
->>>>>>> refactorizando-CRUD-generico
         const result = await request.query(stringQuery);
 
 
         if (!result.recordset.length)
             return res.status(404).json({ error: "No encontrado" });
 
-<<<<<<< HEAD
-        return res.json(result.recordset);
-=======
         // Retornamos el objeto solo (no array)
         return res.json(result.recordset[0]); 
->>>>>>> refactorizando-CRUD-generico
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Error al obtener registro" });
