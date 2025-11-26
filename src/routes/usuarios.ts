@@ -99,11 +99,15 @@ router.post("/login", async (req, res) => {
         if (!user) return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
 
         // Include LU in token payload for non-admin users to avoid extra DB lookups
-        const payload: any = { id: user.id, username: user.username, rol: user.rol };
+        const payload: any = { id: user.id, username: user.username, rol: user.rol, nombre: (user as any).nombre };
         if (user.rol !== 'administrador' && (user as any).lu) {
             payload.lu = (user as any).lu;
         }
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+
+        // Setear cookie para que el navegador la incluya automáticamente en solicitudes
+        // No la hacemos HttpOnly porque el frontend también la usa para redirección UX (localStorage se sigue usando)
+        res.cookie("token", token, { sameSite: 'lax', path: '/' });
 
         return res.json({ message: "Login exitoso", token });
 

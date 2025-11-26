@@ -28,7 +28,8 @@ export async function autenticarUsuario(pool: ConnectionPool, username: string, 
       username: user.username,
       email: user.email,
       rol: user.rol,
-      lu: user.lu || null
+      lu: user.lu || null,
+      nombre: user.nombre ?? null
     };
 }
 
@@ -40,7 +41,19 @@ export function generarToken(usuario: string): string {
 // Middleware para verificar token
 export function verificarTokenMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  let token = authHeader && authHeader.split(" ")[1];
+
+  // Si no viene en Authorization, comprobar si llegó en una cookie llamada 'token'
+  if (!token && req.headers && req.headers.cookie) {
+    const cookieStr = req.headers.cookie as string;
+    const cookies = cookieStr.split(";").map(c => c.trim());
+    for (const c of cookies) {
+      if (c.startsWith("token=")) {
+        token = decodeURIComponent(c.substring("token=".length));
+        break;
+      }
+    }
+  }
 
   if (!token) {
     return res.status(401).json({ error: "No token" });

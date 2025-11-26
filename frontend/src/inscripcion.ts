@@ -1,22 +1,8 @@
 import { checkToken, getAuthHeaders } from "./authCheck.js";
 checkToken();
 
-/**
- * inscripcion.ts
- * - Carga lista de materias (panel izquierdo)
- * - Muestra cursada más reciente en el panel central
- * - Muestra inscripciones del alumno (panel derecho)
- * - Permite Inscribirse y Desinscribirse
- *
- * Requisitos:
- * - El login debe dejar token en localStorage ("token")
- * - Preferible: si el login guarda LU en localStorage ("lu") lo usará.
- *   Si no existe, intentará obtener información del usuario desde
- *   /api/v0/usuarios/validar-token (si el backend devuelve info).
- */
-
 /* ---------------------------
-   Tipos
+   Tipos (Igual que antes)
    --------------------------- */
 type Materia = {
     MateriaId: number;
@@ -50,8 +36,10 @@ const tituloMateriaEl = document.getElementById("tituloMateria") as HTMLElement;
 const infoCursadaEl = document.getElementById("infoCursada") as HTMLDivElement;
 const btnAccion = document.getElementById("btnAccion") as HTMLButtonElement;
 
+const mensajeAccionEl = document.getElementById("mensajeAccion") as HTMLElement;
+
 /* ---------------------------
-   Estado
+   Estado (Igual que antes)
    --------------------------- */
 let materias: Materia[] = [];
 let inscripciones: Inscripcion[] = [];
@@ -60,7 +48,7 @@ let cursadaSeleccionada: Cursada | null = null;
 let usuarioLU: string | null = null;
 
 /* ---------------------------
-   Utilidades
+   Utilidades (Igual que antes)
    --------------------------- */
 function obtenerToken(): string | null {
     return localStorage.getItem("token");
@@ -73,7 +61,6 @@ async function obtenerLU(): Promise<string | null> {
     const luLocal = localStorage.getItem("lu");
     if (luLocal) return luLocal;
 
-    // Intentar pedir info al endpoint validar-token (si lo devuelve)
     try {
         const token = obtenerToken();
         if (!token) return null;
@@ -84,7 +71,6 @@ async function obtenerLU(): Promise<string | null> {
 
         if (!res.ok) return null;
 
-        // Si el endpoint devuelve un JSON con la info del usuario (p.ej. { lu: "123", ... })
         const data = await res.json();
         if (data?.lu) {
             localStorage.setItem("lu", data.lu);
@@ -95,6 +81,21 @@ async function obtenerLU(): Promise<string | null> {
     } catch (err) {
         console.error("Error al intentar obtener LU desde validar-token:", err);
         return null;
+    }
+}
+
+// UTILIDAD PARA MOSTRAR MENSAJES
+function mostrarMensajeEstado(mensaje: string, tipo: 'exito' | 'error' | 'neutro') {
+    if (!mensajeAccionEl) return;
+    
+    mensajeAccionEl.textContent = mensaje;
+    
+    if (tipo === 'exito') {
+        mensajeAccionEl.style.color = 'green';
+    } else if (tipo === 'error') {
+        mensajeAccionEl.style.color = 'red';
+    } else {
+        mensajeAccionEl.style.color = 'black';
     }
 }
 
@@ -145,6 +146,7 @@ function renderInscripciones() {
 }
 
 function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
+
     if (!c) {
         tituloMateriaEl.textContent = "Seleccione una materia";
         infoCursadaEl.innerHTML = `<p>No hay información de cursada para la materia seleccionada.</p>`;
@@ -160,13 +162,7 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
     const htmlLines: string[] = [];
     htmlLines.push(`<p><strong>Cuatrimestre:</strong> ${c.Cuatrimestre}</p>`);
     if (c.Profesor) htmlLines.push(`<p><strong>Profesor:</strong> ${c.Profesor}</p>`);
-    // if (c.Aula) htmlLines.push(`<p><strong>Aula:</strong> ${c.Aula}</p>`);
-    // if (c.Horario) htmlLines.push(`<p><strong>Horario:</strong> ${c.Horario}</p>`);
-    // if (typeof c.Cupos !== "undefined" && c.Cupos !== null) htmlLines.push(`<p><strong>Cupos:</strong> ${c.Cupos}</p>`);
-    // if (c["Descripcion"] || c["descripcion"]) {
-    //     htmlLines.push(`<p><strong>Descripción:</strong> ${c["Descripcion"] ?? c["descripcion"]}</p>`);
-    // }
-
+    
     infoCursadaEl.innerHTML = htmlLines.join("\n");
 
     // Determinar si el usuario está inscripto a esta materia-cuatrimestre
@@ -178,6 +174,8 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
         btnAccion.textContent = "Inscribirse";
         btnAccion.dataset.action = "inscribir";
         btnAccion.style.display = "inline-block";
+        // Estilo opcional para el botón de inscribir
+        btnAccion.style.backgroundColor = ""; // Volver al default
     }
 }
 
@@ -189,19 +187,13 @@ function isInscripto(lu: string, materiaId: number, cuatrimestre: number) {
 }
 
 /* ---------------------------
-   Llamados a API
+   Llamados a API (Igual que antes)
    --------------------------- */
 
 async function cargarMateriasDesdeAPI() {
     try {
-        const res = await fetch("/api/v0/materias", {
-            headers: getAuthHeaders()
-        });
-
-        if (!res.ok) {
-            throw new Error("Error al obtener materias");
-        }
-
+        const res = await fetch("/api/v0/materias", { headers: getAuthHeaders() });
+        if (!res.ok) throw new Error("Error al obtener materias");
         const data: Materia[] = await res.json();
         materias = data;
         renderListaMaterias();
@@ -214,14 +206,8 @@ async function cargarMateriasDesdeAPI() {
 async function cargarInscripcionesDesdeAPI() {
     try {
         if (!usuarioLU) return;
-        const res = await fetch(`/api/v0/cursa/${encodeURIComponent(usuarioLU)}`, {
-            headers: getAuthHeaders()
-        });
-
-        if (!res.ok) {
-            throw new Error("Error al obtener inscripciones");
-        }
-
+        const res = await fetch(`/api/v0/cursa/${encodeURIComponent(usuarioLU)}`, { headers: getAuthHeaders() });
+        if (!res.ok) throw new Error("Error al obtener inscripciones");
         const data: Inscripcion[] = await res.json();
         inscripciones = data;
         renderInscripciones();
@@ -233,14 +219,10 @@ async function cargarInscripcionesDesdeAPI() {
 
 async function obtenerCursadaMasRecienteAPI(materiaId: number): Promise<Cursada | null> {
     try {
-        const res = await fetch(`/api/v0/cursadas/ultima/${materiaId}`, {
-            headers: getAuthHeaders()
-        });
+        const res = await fetch(`/api/v0/cursadas/ultima/${materiaId}`, { headers: getAuthHeaders() });
         if (!res.ok) {
-            if (res.status === 400) throw new Error("ID de materia inválido");
-            if (res.status === 404) throw new Error("No hay cursadas para esta materia");
-            if (res.status === 500) throw new Error("Error al obtener la cursada");
-            //throw new Error("Error al obtener cursada");
+            // Manejo de errores silencioso para no romper flujo visual
+            return null; 
         }
         const data: Cursada = await res.json();
         return data;
@@ -255,6 +237,7 @@ async function obtenerCursadaMasRecienteAPI(materiaId: number): Promise<Cursada 
    --------------------------- */
 
 async function onClickMateria(materiaId: number) {
+    mostrarMensajeEstado("", "neutro");
     materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
     if (!materiaSeleccionada) return;
 
@@ -279,15 +262,18 @@ async function mostrarCursadaPorMateriaYCuatri(materiaId: number, cuatrimestre: 
 }
 
 /* ---------------------------
-   Inscribir / Desinscribir
+   Inscribir / Desinscribir (MODIFICADOS)
    --------------------------- */
 async function inscribir() {
+    // Limpiamos mensaje previo
+    mostrarMensajeEstado("", "neutro");
+
     if (!usuarioLU) {
-        alert("No se pudo detectar su LU. Por favor inicie sesión nuevamente.");
+        mostrarMensajeEstado("Error: No se detectó LU. Reinicie sesión.", "error");
         return;
     }
     if (!cursadaSeleccionada) {
-        alert("No hay cursada seleccionada para inscribirse.");
+        mostrarMensajeEstado("No hay cursada seleccionada.", "error");
         return;
     }
 
@@ -313,24 +299,31 @@ async function inscribir() {
             throw new Error(data?.error || "Error al inscribir");
         }
 
-        // recargar inscripciones
+        // Recargar datos
         await cargarInscripcionesDesdeAPI();
-        // refrescar vista central para cambiar el botón
+        
+        // Refrescar vista
         mostrarCursadaEnCentro(cursadaSeleccionada, materiaSeleccionada?.Nombre);
-        alert("Inscripción realizada correctamente.");
+        
+        // MENSAJE DE ÉXITO EN TEXTO
+        mostrarMensajeEstado("✅ Inscripción realizada correctamente.", "exito");
+        
     } catch (err: any) {
         console.error(err);
-        alert(err.message ?? "Error al inscribir");
+        mostrarMensajeEstado(`❌ ${err.message ?? "Error al inscribir"}`, "error");
     }
 }
 
 async function desinscribir() {
+    // Limpiamos mensaje previo
+    mostrarMensajeEstado("", "neutro");
+
     if (!usuarioLU) {
-        alert("No se pudo detectar su LU. Por favor inicie sesión nuevamente.");
+        mostrarMensajeEstado("Error: No se detectó LU.", "error");
         return;
     }
     if (!cursadaSeleccionada) {
-        alert("No hay cursada seleccionada para desinscribirse.");
+        mostrarMensajeEstado("No hay cursada seleccionada.", "error");
         return;
     }
 
@@ -357,18 +350,25 @@ async function desinscribir() {
         }
 
         await cargarInscripcionesDesdeAPI();
+        
         mostrarCursadaEnCentro(cursadaSeleccionada, materiaSeleccionada?.Nombre);
-        alert("Desinscripción realizada correctamente.");
+
+        // MENSAJE DE ÉXITO EN TEXTO
+        mostrarMensajeEstado("✅ Desinscripción realizada correctamente.", "exito");
+
     } catch (err: any) {
         console.error(err);
-        alert(err.message ?? "Error al desinscribir");
+        mostrarMensajeEstado(`❌ ${err.message ?? "Error al desinscribir"}`, "error");
     }
 }
 
 /* ---------------------------
    Inicialización
    --------------------------- */
-btnAccion.addEventListener("click", async () => {
+// Modificamos esto para recibir el evento 'e'
+btnAccion.addEventListener("click", async (e) => {
+    e.preventDefault(); // 🛑 ESTO EVITA LA RECARGA DE PÁGINA
+    
     const action = btnAccion.dataset.action;
     if (action === "inscribir") {
         await inscribir();

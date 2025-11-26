@@ -1,8 +1,8 @@
 import sql from "mssql";
-import { getAdminPool } from "./conecciones-bd.js";
+import { getOwnerPool } from "./conecciones-bd.js";
 
 export async function obtenerMetadataTabla(nombreTabla: string) {
-    const pool = await getAdminPool();
+    const pool = await getOwnerPool();
 
     const columnasQuery = `
         SELECT 

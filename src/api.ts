@@ -7,7 +7,7 @@ import metadataRouter from "./routes/metadata.js";
 import crudGenerico from "./routes/crud-generico.js";
 import inscripcionRouter from "./routes/inscripcion.js";
 import certificadosRouter from "./routes/certificados.js";
-import { verificarTokenMiddleware } from "./auth.js"; // asegurate de la ruta
+import { verificarTokenMiddleware, requireRole } from "./auth.js"; // asegurate de la ruta
 
 
 const app = express();
@@ -16,15 +16,10 @@ const __dirname = carpetaDelArchivoActual();
 
 app.use(express.json());
 
-// Archivos estáticos
-app.use(express.static(path.join(__dirname, "../frontend/pages")));
-app.use('/styles', express.static(path.join(__dirname, "../frontend/styles")));
-app.use('/dist', express.static(path.join(__dirname, "../frontend/dist")));
-app.use("/certificados", express.static(path.join(__dirname, "../certificados")));
-
 // Ruta raíz redirige al login
 app.get("/", (_req, res) => {
-    res.sendFile(path.join(__dirname, "../index.html"));
+    // Servir la página de login principal desde el directorio de frontend
+    res.sendFile(path.join(__dirname, "../frontend/pages/index.html"));
 });
 
 // Rutas de alumnos (tabla, cargar, eliminar, crear, editar alumnos)
@@ -41,6 +36,21 @@ app.use("/api/v0", certificadosRouter);
 app.get("/api/v0/usuarios/validar-token", verificarTokenMiddleware, (_req, res) => {
     res.json({ ok: true, mensaje: "Token válido" });
 });
+
+// Rutas protegidas para servir los menús según rol
+app.get('/menuAdministrador.html', verificarTokenMiddleware, requireRole('administrador'), (_req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/menuAdministrador.html'));
+});
+
+app.get('/menuUsuario.html', verificarTokenMiddleware, requireRole('usuario'), (_req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/menuUsuario.html'));
+});
+
+// Archivos estáticos (el resto de páginas públicas)
+app.use(express.static(path.join(__dirname, "../frontend/pages")));
+app.use('/styles', express.static(path.join(__dirname, "../frontend/styles")));
+app.use('/dist', express.static(path.join(__dirname, "../frontend/dist")));
+app.use("/certificados", express.static(path.join(__dirname, "../certificados")));
 
 
 

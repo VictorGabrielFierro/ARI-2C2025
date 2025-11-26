@@ -29,12 +29,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 resultadosDivLogin.textContent = "Login exitoso!";
                 resultadosDivLogin.className = "success";
                 localStorage.setItem("token", data.token);
-                localStorage.setItem("lu",'369/23');
 
-                // Redirigir al menú principal
-                setTimeout(() => {
-                    window.location.href = "./menuAdministrador.html"; // o la ruta relativa correcta al menú
-                }, 1000); // espera 1 segundo para que el usuario vea el mensaje
+                // Decodificar token (sin verificar) para obtener el rol y redirigir según rol
+                try {
+                    const parts = data.token.split('.');
+                    if (parts.length >= 2) {
+                        const payload = JSON.parse(atob(parts[1]));
+                        const rol = payload.rol ?? payload.role ?? "usuario";
+                        setTimeout(() => {
+                            if (rol === 'administrador') {
+                                window.location.href = "./menuAdministrador.html";
+                            } else if (rol === 'usuario') {
+                                window.location.href = "./menuUsuario.html";
+                            } else {
+                                // por defecto, enviar al menú de usuario
+                                window.location.href = "./menuUsuario.html";
+                            }
+                        }, 500);
+                    } else {
+                        // token inesperado, llevar al menu por defecto
+                        window.location.href = "./menuUsuario.html";
+                    }
+                } catch (e) {
+                    console.error('Error decodificando token:', e);
+                    window.location.href = "./menuUsuario.html";
+                }
             }
             else {
                 resultadosDivLogin.textContent = data.error || "Usuario o contraseña incorrectos";

@@ -68,4 +68,25 @@ export async function getOwnerPool(): Promise<ConnectionPool> {
     return ownerPool;
 }
 
+// Funcion Selectora de Pool
+
+export async function obtenerPoolPorRol(rol?: string): Promise<ConnectionPool> {
+    switch (rol) {
+        case 'administrador': 
+            // Si es admin, le damos la conexión con superpoderes
+            return await getAdminPool(); 
+            
+        case 'owner':
+            // Si usas este rol para cosas críticas
+            return await getOwnerPool();
+
+        // Puedes agregar más casos si tienes un usuario 'alumno'
+        // case 'alumno': return await getAlumnoPool(); 
+
+        default:
+            // Para cualquier otro caso (o si rol es undefined),
+            // damos la conexión restringida de solo lectura/login
+            return await getLoginPool();
+    }
+}
 

@@ -40,4 +40,5 @@ export interface Usuario {
     email?: string;
   rol?: string;
   lu?: string | null;
+  nombre?: string;
 }

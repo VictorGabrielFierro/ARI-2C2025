@@ -1,0 +1,49 @@
+#historia-container {
+    width: 80%;
+    margin: auto;
+    margin-top: 30px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background-color: #004080;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background-color: #e8f0ff;
+}
+
+.estado-aprobado {
+    color: green;
+    font-weight: bold;
+}
+
+.estado-regular {
+    color: #0055aa;
+    font-weight: bold;
+}
+
+.estado-reprobado {
+    color: red;
+    font-weight: bold;
+}
+
+.estado-cursando {
+    color: #555;
+    font-weight: bold;
+}

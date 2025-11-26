@@ -16,7 +16,21 @@ function formatFecha(fecha?: string | null): string {
     const [year, month, day] = fechaSimple.split('-');
     return `${day}/${month}/${year}`;
 }
-
+// ----------------------------------------------------------
+// UTILIDAD: Limpiar objeto (Saca nulls y undefined)
+// ----------------------------------------------------------
+function limpiarObjeto(obj: any) {
+    const limpio: any = { ...obj };
+    Object.keys(limpio).forEach(key => {
+        // Borramos null, undefined. 
+        // Nota: Dejamos "" (string vacío) por si quieres guardar texto vacío.
+        // Si prefieres que vacío sea null, cambia la condición.
+        if (limpio[key] === null || limpio[key] === undefined) {
+            delete limpio[key];
+        }
+    });
+    return limpio;
+}
 // ----------------------------------------------------------
 // UTILIDAD: leer parámetros de la URL
 // ----------------------------------------------------------
@@ -53,7 +67,7 @@ export function cerrarModal(id: string) {
 // OBTENER METADATA + ARMAR PANTALLA
 // ----------------------------------------------------------
 async function cargarMetadata() {
-    const res = await fetch(`/api/v0/metadata/aida.${tabla}`, {
+    const res = await fetch(`/api/v0/metadata/${tabla}`, {
         headers: getAuthHeaders()
     });
 
@@ -171,7 +185,7 @@ async function cargarRegistros() {
     const tbody = document.getElementById("tbody")!;
 
     try {
-        const res = await fetch(`/api/v0/crud/aida.${tabla}/${plural}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${plural}`, {
             headers: getAuthHeaders()
         });
 
@@ -213,12 +227,12 @@ async function crearRegistro(e: Event) {
     columnas.filter(c => !c.identity).forEach(col => {
         data[col.name] = (document.getElementById(`crear_${col.name}`) as HTMLInputElement).value || null;
     });
-
+    const dataLimpia = limpiarObjeto(data);
     try {
-        const res = await fetch(`/api/v0/crud/aida.${tabla}/${singular}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${singular}`, {
             method: "POST",
             headers: getAuthHeaders(),
-            body: JSON.stringify(data)
+            body: JSON.stringify(dataLimpia)
         });
 
         const json = await res.json();
@@ -237,7 +251,7 @@ async function crearRegistro(e: Event) {
 }
 
 // ----------------------------------------------------------
-// EDITAR REGISTRO
+// EDITAR REGISTRO (Corregido)
 // ----------------------------------------------------------
 async function editarRegistro(e: Event) {
     e.preventDefault();
@@ -246,20 +260,30 @@ async function editarRegistro(e: Event) {
     const data: any = {};
 
     columnas.forEach(col => {
-        data[col.name] = (document.getElementById(`editar_${col.name}`) as HTMLInputElement).value || null;
+        const input = document.getElementById(`editar_${col.name}`) as HTMLInputElement;
+        // Si está vacío, ponemos null. 'limpiarObjeto' lo borrará.
+        // Al no enviarlo, el Backend NO TOCARÁ esa columna (mantiene el valor viejo).
+        data[col.name] = input.value === "" ? null : input.value;
     });
 
-    const id = pk
-    .map(col => encodeURIComponent(data[col.pk]))   // obtengo cada valor PK desde data
-    .join("__");  // los concateno con separador
+    // 1. Construimos el ID para la URL
+    // Nota: encodeURIComponent AQUÍ es correcto para las PARTES (ej: 1600/17 -> 1600%2F17)
+    const idUrl = pk
+        .map(col => encodeURIComponent(data[col.pk])) 
+        .join("__");
 
+    // 2. Limpiamos el cuerpo (Sacamos los nulls)
+    const dataLimpia = limpiarObjeto(data);
 
     try {
-        const res = await fetch(`/api/v0/crud/aida.${tabla}/${singular}/${encodeURIComponent(id)}`, {
+        // OJO AQUÍ: Quitamos el 'encodeURIComponent' externo que tenías antes.
+        // Ya codificamos las partes arriba. Si codificas de nuevo, el '/' se vuelve '%252F' y falla.
+        const res = await fetch(`/api/v0/crud/${tabla}/${singular}/${idUrl}`, {
             method: "PUT",
             headers: getAuthHeaders(),
-            body: JSON.stringify(data)
+            body: JSON.stringify(dataLimpia)
         });
+        
         const json = await res.json();
 
         if (!res.ok) throw new Error(json.error || "Error al actualizar");
@@ -282,17 +306,20 @@ export async function eliminarRegistro(e: Event) {
     const mensaje = document.getElementById("mensajeModalEliminar")!;
     const data: any = {};
 
+    // Obtenemos los valores de los inputs del formulario eliminar
     columnas.forEach(col => {
-        data[col.name] = (document.getElementById(`eliminar_${col.name}`) as HTMLInputElement).value || null;
+        const val = (document.getElementById(`eliminar_${col.name}`) as HTMLInputElement).value;
+        data[col.name] = val;
     });
 
-    const id = pk
-    .map(col => encodeURIComponent(data[col.pk]))   // obtengo cada valor PK desde data
-    .join("__");  // los concateno con separador
-
+    // Construimos el ID codificando CADA PARTE por separado
+    const idUrl = pk
+        .map(col => encodeURIComponent(data[col.pk])) 
+        .join("__");
 
     try {
-        const res = await fetch(`/api/v0/crud/aida.${tabla}/${plural}/${id}`, {
+        // Usamos idUrl directo
+        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });
