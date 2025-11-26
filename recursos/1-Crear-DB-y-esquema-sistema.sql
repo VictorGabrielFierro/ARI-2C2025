@@ -17,6 +17,8 @@ BEGIN
 END
 $do$;
 
+CREATE DATABASE aida_db OWNER aida_owner;
+
 -- Crea el schema (similar a los namespaces) y asigna el dueño
 CREATE SCHEMA IF NOT EXISTS aida AUTHORIZATION aida_owner;
 
@@ -74,7 +76,7 @@ CREATE TABLE aida.correlativas (
 -- Crear tabla de plan de estudios
 CREATE TABLE aida.plan_de_estudios (
     "CarreraId" INTEGER NOT NULL,
-    "MateriaId" INTEGER NOTMPL NULL,
+    "MateriaId" INTEGER NOT NULL,
 
     PRIMARY KEY ("CarreraId", "MateriaId"),
     FOREIGN KEY ("CarreraId") REFERENCES aida.carreras("CarreraId"),
