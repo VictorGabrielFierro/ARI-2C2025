@@ -45,43 +45,12 @@ let materias: Materia[] = [];
 let inscripciones: Inscripcion[] = [];
 let materiaSeleccionada: Materia | null = null;
 let cursadaSeleccionada: Cursada | null = null;
-let usuarioLU: string | null = null;
 
 /* ---------------------------
    Utilidades (Igual que antes)
    --------------------------- */
 function obtenerToken(): string | null {
     return localStorage.getItem("token");
-}
-
-/**
- * Intenta obtener LU del localStorage o desde validar-token si el backend la devuelve.
- */
-async function obtenerLU(): Promise<string | null> {
-    const luLocal = localStorage.getItem("lu");
-    if (luLocal) return luLocal;
-
-    try {
-        const token = obtenerToken();
-        if (!token) return null;
-
-        const res = await fetch("/api/v0/usuarios/validar-token", {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        if (data?.lu) {
-            localStorage.setItem("lu", data.lu);
-            return data.lu;
-        }
-
-        return null;
-    } catch (err) {
-        console.error("Error al intentar obtener LU desde validar-token:", err);
-        return null;
-    }
 }
 
 // UTILIDAD PARA MOSTRAR MENSAJES
@@ -166,7 +135,7 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
     infoCursadaEl.innerHTML = htmlLines.join("\n");
 
     // Determinar si el usuario está inscripto a esta materia-cuatrimestre
-    if (usuarioLU && isInscripto(usuarioLU, c.MateriaId, c.Cuatrimestre)) {
+    if (isInscripto(c.MateriaId, c.Cuatrimestre)) {
         btnAccion.textContent = "Desinscribirse";
         btnAccion.dataset.action = "desinscribir";
         btnAccion.style.display = "inline-block";
@@ -182,8 +151,8 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
 /* ---------------------------
    Helpers de negocio
    --------------------------- */
-function isInscripto(lu: string, materiaId: number, cuatrimestre: number) {
-    return inscripciones.some(i => i.MateriaId === materiaId && i.Cuatrimestre === cuatrimestre && String(lu) === String((i as any).lu ?? lu));
+function isInscripto(materiaId: number, cuatrimestre: number) {
+    return inscripciones.some(i => i.MateriaId === materiaId && i.Cuatrimestre === cuatrimestre);
 }
 
 /* ---------------------------
@@ -205,8 +174,7 @@ async function cargarMateriasDesdeAPI() {
 
 async function cargarInscripcionesDesdeAPI() {
     try {
-        if (!usuarioLU) return;
-        const res = await fetch(`/api/v0/cursa/${encodeURIComponent(usuarioLU)}`, { headers: getAuthHeaders() });
+        const res = await fetch(`/api/v0/cursa`, { headers: getAuthHeaders() });
         if (!res.ok) throw new Error("Error al obtener inscripciones");
         const data: Inscripcion[] = await res.json();
         inscripciones = data;
@@ -268,10 +236,6 @@ async function inscribir() {
     // Limpiamos mensaje previo
     mostrarMensajeEstado("", "neutro");
 
-    if (!usuarioLU) {
-        mostrarMensajeEstado("Error: No se detectó LU. Reinicie sesión.", "error");
-        return;
-    }
     if (!cursadaSeleccionada) {
         mostrarMensajeEstado("No hay cursada seleccionada.", "error");
         return;
@@ -279,7 +243,6 @@ async function inscribir() {
 
     try {
         const body = {
-            lu: usuarioLU,
             materiaId: cursadaSeleccionada.MateriaId,
             cuatrimestre: cursadaSeleccionada.Cuatrimestre
         };
@@ -318,10 +281,6 @@ async function desinscribir() {
     // Limpiamos mensaje previo
     mostrarMensajeEstado("", "neutro");
 
-    if (!usuarioLU) {
-        mostrarMensajeEstado("Error: No se detectó LU.", "error");
-        return;
-    }
     if (!cursadaSeleccionada) {
         mostrarMensajeEstado("No hay cursada seleccionada.", "error");
         return;
@@ -329,7 +288,6 @@ async function desinscribir() {
 
     try {
         const body = {
-            lu: usuarioLU,
             materiaId: cursadaSeleccionada.MateriaId,
             cuatrimestre: cursadaSeleccionada.Cuatrimestre
         };
@@ -384,14 +342,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         window.location.href = "./login.html";
         return;
     }
-
-    const lu = await obtenerLU();
-    if (!lu) {
-        // Forzamos volver a login si no conseguimos LU
-        window.location.href = "./login.html";
-        return;
-    }
-    usuarioLU = lu;
 
     // Cargar datos iniciales
     await Promise.all([

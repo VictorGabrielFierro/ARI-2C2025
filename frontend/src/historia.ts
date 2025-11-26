@@ -2,9 +2,9 @@ import { getAuthHeaders, checkToken } from "./authCheck.js";
 checkToken();
 
 async function obtenerHistoria() {
-    const lu = localStorage.getItem('lu')
+    
     try {
-        const res = await fetch(`/api/v0/crud/aida.cursa/cursa/${encodeURIComponent(lu ?? '')}`, {
+        const res = await fetch(`/api/v0/crud/aida.cursa/cursa/actualLU`, {
             headers: getAuthHeaders()
         });
 

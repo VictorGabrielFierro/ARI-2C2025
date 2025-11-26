@@ -77,13 +77,16 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
 });
 
 // ---------------- GET ONE ----------------
-router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
+router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        const userRole = req.user?.rol;
-        const pool = await obtenerPoolPorRol(userRole);
+        //const userRole = req.user?.rol;
+        const pool = await obtenerPoolPorRol('administrador');
         // Decodificamos ID compuesto
         const idParts = req.params.id?.split("__").map(decodeURIComponent);
+        if (idParts?.includes('actualLU')){
+            idParts[0] = req.user?.lu ?? ''
+        }
         
         if (!pool) return res.status(500).json({ error: "No hay conexión a BD" });
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
@@ -92,7 +95,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         const pkInfo = meta.pk; // Array de objetos { pk: "nombreCol" }
 
         // Validación de cantidad de parámetros
-        if (!idParts || idParts.length !== pkInfo.length) {
+        if (!idParts) {
             return res.status(400).json({ error: "ID incorrecto para esta tabla" });
         }
 
@@ -100,9 +103,9 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         const whereConditions: string[] = [];
 
         // Inyectamos valores y preparamos condiciones WHERE (col = @col)
-        pkInfo.forEach((p, index) => {
-            request.input(p.pk, sql.NVarChar, idParts[index]);
-            whereConditions.push(`[${p.pk}] = @${p.pk}`);
+        idParts.forEach((id, index) => {
+            request.input(pkInfo[index].pk, sql.NVarChar, id);
+            whereConditions.push(`[${pkInfo[index].pk}] = @${pkInfo[index].pk}`);
         });
 
         // Usamos SelectBase (SIN Order By) + WHERE construído con AND
@@ -115,7 +118,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
             return res.status(404).json({ error: "No encontrado" });
 
         // Retornamos el objeto solo (no array)
-        return res.json(result.recordset[0]); 
+        return res.json(result.recordset); 
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Error al obtener registro" });

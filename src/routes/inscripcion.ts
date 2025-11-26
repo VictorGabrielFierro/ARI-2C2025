@@ -54,7 +54,7 @@ router.get("/cursadas/ultima/:materiaId", verificarTokenMiddleware, async (req: 
 /* =================================================
    📌 3. Obtener materias en las que está inscripto un alumno
    ================================================= */
-router.get("/cursa/:lu", verificarTokenMiddleware, async (req: Request, res: Response) => {
+router.get("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const lu = req.user?.lu;
 
@@ -82,7 +82,8 @@ router.get("/cursa/:lu", verificarTokenMiddleware, async (req: Request, res: Res
    ======================= */
 router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const { lu, materiaId, cuatrimestre } = req.body;
+        const {materiaId, cuatrimestre } = req.body;
+        const lu = req.user?.lu;
 
         if (!lu || !materiaId || !cuatrimestre) {
             return res.status(400).json({ error: "Datos incompletos" });
@@ -113,7 +114,8 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
    ========================== */
 router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const { lu, materiaId, cuatrimestre } = req.body;
+        const {materiaId, cuatrimestre } = req.body;
+        const lu = req.user?.lu;
 
         if (!lu || !materiaId || !cuatrimestre) {
             return res.status(400).json({ error: "Datos incompletos" });
