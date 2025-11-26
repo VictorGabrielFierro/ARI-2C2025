@@ -1,54 +1,50 @@
-USE aida_db;
-GO
+-- Script de inserción de datos iniciales para el esquema 'aida' en PostgreSQL.
 
 /* ==========================================================
    1) CARRERAS
    ========================================================== */
-INSERT INTO aida.carreras (CarreraId, Nombre) VALUES
-(1, N'Licenciatura en Ciencias de la Computación'),
-(2, N'Licenciatura en Ciencias de Datos');
-GO
+INSERT INTO aida.carreras ("CarreraId", "Nombre") VALUES
+(1, 'Licenciatura en Ciencias de la Computación'),
+(2, 'Licenciatura en Ciencias de Datos');
 
 
 /* ==========================================================
    2) MATERIAS 
    (IDs manuales para mantener consistencia)
    ========================================================== */
-INSERT INTO aida.materias (MateriaId, Nombre) VALUES
-(1,  N'Álgebra I'),
-(2,  N'Análisis I'),
-(3,  N'Análisis II'),
-(4,  N'Análisis Avanzado'),
-(5,  N'Probabilidad'),
-(6,  N'Introducción a la Programación'),
-(7,  N'Algoritmos y Estructuras de Datos I'),
-(8,  N'Algoritmos y Estructuras de Datos II'),
-(9,  N'Algoritmos y Estructuras de Datos III'),
-(10, N'Técnicas de Diseño de Algoritmos'),
-(11, N'Lenguajes Formales, Autómatas y Computabilidad'),
-(12, N'Complejidad Computacional'),
-(13, N'Sistemas Digitales'),
-(14, N'Arquitectura y Organización de Computadores'),
-(15, N'Sistemas Operativos'),
-(16, N'Paradigmas de Programación'),
-(17, N'Ingeniería de Software'),
-(18, N'Algebra Lineal Computacional'),
-(19, N'Estadística Computacional'),
-(20, N'Redes de Comunicaciones y Cómputo Distribuido'),
-(21, N'Programación Concurrente y Paralela'),
-(22, N'Almacenamiento y Recuperación de la Información'),
-(23, N'Análisis y Ciencia de Datos'),
-(24, N'Electiva de Ciencias Naturales'),
-(25, N'Introducción al Modelado Continuo'),
-(26, N'Introducción a Investigación Operativa y Optimización'),
-(27, N'Introducción a la Estadística y Ciencia de Datos'),
-(28, N'Laboratorio de Datos');
-GO
+INSERT INTO aida.materias ("MateriaId", "Nombre", "Descripcion") VALUES
+(1,  'Álgebra I', NULL),
+(2,  'Análisis I', NULL),
+(3,  'Análisis II', NULL),
+(4,  'Análisis Avanzado', NULL),
+(5,  'Probabilidad', NULL),
+(6,  'Introducción a la Programación', NULL),
+(7,  'Algoritmos y Estructuras de Datos I', NULL),
+(8,  'Algoritmos y Estructuras de Datos II', NULL),
+(9,  'Algoritmos y Estructuras de Datos III', NULL),
+(10, 'Técnicas de Diseño de Algoritmos', NULL),
+(11, 'Lenguajes Formales, Autómatas y Computabilidad', NULL),
+(12, 'Complejidad Computacional', NULL),
+(13, 'Sistemas Digitales', NULL),
+(14, 'Arquitectura y Organización de Computadores', NULL),
+(15, 'Sistemas Operativos', NULL),
+(16, 'Paradigmas de Programación', NULL),
+(17, 'Ingeniería de Software', NULL),
+(18, 'Algebra Lineal Computacional', NULL),
+(19, 'Estadística Computacional', NULL),
+(20, 'Redes de Comunicaciones y Cómputo Distribuido', NULL),
+(21, 'Programación Concurrente y Paralela', NULL),
+(22, 'Almacenamiento y Recuperación de la Información', NULL),
+(23, 'Análisis y Ciencia de Datos', NULL),
+(24, 'Electiva de Ciencias Naturales', NULL),
+(25, 'Introducción al Modelado Continuo', NULL),
+(26, 'Introducción a Investigación Operativa y Optimización', NULL),
+(27, 'Introducción a la Estadística y Ciencia de Datos', NULL),
+(28, 'Laboratorio de Datos', NULL);
 
 
 /* ==========================================================
    3) CORRELATIVAS 
-   (Derivadas fielmente de los dos mapas de correlatividad)
    ========================================================== */
 
 INSERT INTO aida.correlativas VALUES
@@ -77,7 +73,6 @@ INSERT INTO aida.correlativas VALUES
 (28, 18), -- Lab Datos ← Álgebra Lineal Comp
 (23, 27)  -- Ciencia Datos ← Intro Estadística
 ;
-GO
 
 
 /* ==========================================================
@@ -94,7 +89,6 @@ INSERT INTO aida.plan_de_estudios VALUES
 INSERT INTO aida.plan_de_estudios VALUES
 (2,1),(2,2),(2,3),(2,4),(2,5),(2,18),(2,24),(2,25),(2,26),
 (2,27),(2,28),(2,9),(2,23);
-GO
 
 
 /* ==========================================================
@@ -111,7 +105,6 @@ INSERT INTO aida.alumnos (lu, apellido, nombres, titulo, titulo_en_tramite, egre
 ('8/25','Castro','Elena',NULL,'2024-01-15',NULL),
 ('9/25','Flores','Diego',NULL,NULL,NULL),
 ('10/25','Acosta','Valeria',NULL,NULL,NULL);
-GO
 
 
 /* ==========================================================
@@ -120,22 +113,20 @@ GO
 INSERT INTO aida.estudiante_de VALUES
 ('1/25',1), ('2/25',1), ('3/25',1), ('4/25',2), ('5/25',2),
 ('6/25',2), ('7/25',1), ('8/25',1), ('9/25',2), ('10/25',1);
-GO
 
 
 /* ==========================================================
    7) CURSADAS (2 por cada materia)
+   -- Reemplazo de variables por fechas hardcodeadas y uso de comillas dobles en IDs de columna
    ========================================================== */
 
-DECLARE @fecha1 DATE = '2025-03-17';
-DECLARE @fecha2 DATE = '2025-08-18';
+-- Cuatrimestre 1 (Fecha: 2025-03-17)
+INSERT INTO aida.cursadas ("MateriaId", "Cuatrimestre", "Profesor")
+SELECT "MateriaId", '2025-03-17'::date, 'Profesor A' FROM aida.materias;
 
-INSERT INTO aida.cursadas (MateriaId, Cuatrimestre, Profesor)
-SELECT MateriaId, @fecha1, 'Profesor A' FROM aida.materias;
-
-INSERT INTO aida.cursadas (MateriaId, Cuatrimestre, Profesor)
-SELECT MateriaId, @fecha2, 'Profesor B' FROM aida.materias;
-GO
+-- Cuatrimestre 2 (Fecha: 2025-08-18)
+INSERT INTO aida.cursadas ("MateriaId", "Cuatrimestre", "Profesor")
+SELECT "MateriaId", '2025-08-18'::date, 'Profesor B' FROM aida.materias;
 
 
 /* ==========================================================
@@ -171,4 +162,3 @@ INSERT INTO aida.cursa VALUES
 ('10/25',20,'2025-08-18','2025-08-01',8),
 ('10/25',21,'2025-08-18','2025-08-01',8),
 ('10/25',22,'2025-08-18','2025-08-01',NULL);
-GO
