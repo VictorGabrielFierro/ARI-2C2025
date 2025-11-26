@@ -1,11 +1,11 @@
 import sql from "mssql";
-import { getAdminPool } from "./conecciones-bd.js";
+import { getAlumnoPool } from "./conecciones-bd.js";
 
 /* ===============================
    📌 1. Obtener todas las materias
    =============================== */
 export async function obtenerTodasLasMaterias() {
-    const pool = await getAdminPool();
+    const pool = await getAlumnoPool();
 
     const query = `
         SELECT MateriaId, Nombre, Descripcion
@@ -20,7 +20,7 @@ export async function obtenerTodasLasMaterias() {
    📌 2. Obtener la cursada más reciente de una materia
    =============================================== */
 export async function obtenerCursadaMasReciente(materiaId: number) {
-    const pool = await getAdminPool();
+    const pool = await getAlumnoPool();
 
     const query = `
         SELECT TOP 1 *
@@ -40,7 +40,7 @@ export async function obtenerCursadaMasReciente(materiaId: number) {
    📌 3. Obtener todas las materias en las que está inscripto un alumno (tabla CURSA)
    ====================================================================== */
 export async function obtenerInscripcionesAlumno(lu: string) {
-    const pool = await getAdminPool();
+    const pool = await getAlumnoPool();
 
     const query = `
         SELECT 

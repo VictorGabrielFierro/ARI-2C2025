@@ -1,11 +1,11 @@
 import sql from "mssql";
-import { getAdminPool } from "./conecciones-bd.js";
+import { getAlumnoPool } from "./conecciones-bd.js";
 
 /* =======================
    📌 Inscribir alumno
    ======================= */
 export async function inscribirAlumno(lu: string, materiaId: number, cuatrimestre: number) {
-    const pool = await getAdminPool();
+    const pool = await getAlumnoPool();
 
     // Verificar si ya existe la inscripción
     const checkQuery = `
@@ -41,7 +41,7 @@ export async function inscribirAlumno(lu: string, materiaId: number, cuatrimestr
    📌 Desinscribir alumno
    ========================== */
 export async function desinscribirAlumno(lu: string, materiaId: number, cuatrimestre: number) {
-    const pool = await getAdminPool();
+    const pool = await getAlumnoPool();
 
     const deleteQuery = `
         DELETE FROM aida.cursa

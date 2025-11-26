@@ -39,11 +39,24 @@ const dbConfigOwner: SqlConfig = {
     },
 };
 
+// Pool para usuario owner
+const dbConfigAlumno: SqlConfig = {
+    user: 'aida_alumno',
+    password: 'Alumno2025',
+    server: 'localhost',
+    database: 'aida_db',
+    options: {
+        encrypt: true,
+        trustServerCertificate: true,
+    },
+};
+
 // ------------------ POOLS ------------------
 
 let adminPool: ConnectionPool | null = null;
 let loginPool: ConnectionPool | null = null;
 let ownerPool: ConnectionPool | null = null;
+let alumnoPool: ConnectionPool | null = null;
 
 // ------------------ FUNCIONES DE CONEXIÓN ------------------
 
@@ -68,6 +81,12 @@ export async function getOwnerPool(): Promise<ConnectionPool> {
     return ownerPool;
 }
 
+export async function getAlumnoPool(): Promise<ConnectionPool> {
+    if (!alumnoPool) {
+        alumnoPool = await new sql.ConnectionPool(dbConfigAlumno).connect();
+    }
+    return alumnoPool;
+}
 // Funcion Selectora de Pool
 
 export async function obtenerPoolPorRol(rol?: string): Promise<ConnectionPool> {
@@ -80,8 +99,9 @@ export async function obtenerPoolPorRol(rol?: string): Promise<ConnectionPool> {
             // Si usas este rol para cosas críticas
             return await getOwnerPool();
 
-        // Puedes agregar más casos si tienes un usuario 'alumno'
-        // case 'alumno': return await getAlumnoPool(); 
+        case 'usuario':
+            // Si usas este rol para cosas críticas
+            return await getAlumnoPool();
 
         default:
             // Para cualquier otro caso (o si rol es undefined),
