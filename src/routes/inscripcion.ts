@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { verificarTokenMiddleware } from "../auth.js";
 import {
-    obtenerTodasLasMaterias,
+    obtenerMateriasInscribibles,
     obtenerCursadaMasReciente,
     obtenerInscripcionesAlumno
 } from "../bd/consultas-inscripcion.js";
@@ -16,9 +16,10 @@ const router = Router();
 /* ========================
    📌 1. Obtener lista de materias
    ======================== */
-router.get("/materias", verificarTokenMiddleware, async (_req: Request, res: Response) => {
+router.get("/materias", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const materias = await obtenerTodasLasMaterias();
+        const lu = req.user?.lu;
+        const materias = await obtenerMateriasInscribibles(lu ?? '');
         return res.json(materias);
     } catch (err) {
         console.error(err);

@@ -7,6 +7,7 @@
     gap: 20px;
     padding: 20px;
     height: calc(100vh - 180px);
+    justify-content: center;
 }
 
 .panel {
@@ -16,6 +17,10 @@
     padding: 15px;
     overflow-y: auto;
     box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    flex: 0 0 auto;
+    width: 25%;
+    max-width: 30%;
+    min-width: 30%;
 }
 
 .izquierda {
@@ -24,6 +29,11 @@
 
 .centro {
     width: 50%;
+}
+
+#tituloMateria {
+    overflow-wrap: normal;
+    max-width: 300px;
 }
 
 .derecha {
@@ -51,6 +61,12 @@
 
 .lista li:hover {
     background: #eaeaea;
+}
+
+.lista li.selected {
+    background: #dbeafe; /* azul claro más oscuro, flat design */
+    border-color: #4096d8;
+    color: #1e293b;
 }
 
 /* ===========================

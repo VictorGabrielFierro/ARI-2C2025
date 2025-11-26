@@ -2,17 +2,30 @@ import sql from "mssql";
 import { getAlumnoPool } from "./conecciones-bd.js";
 
 /* ===============================
-   📌 1. Obtener todas las materias
+   📌 1. Obtener todas las materias que pertenecen al plan de estudios y tiene aprobadas las correlativas
    =============================== */
-export async function obtenerTodasLasMaterias() {
+export async function obtenerMateriasInscribibles(lu:string) {
     const pool = await getAlumnoPool();
 
     const query = `
-        SELECT MateriaId, Nombre, Descripcion
-        FROM aida.materias;
+        SELECT m.MateriaId, m.Nombre, m.Descripcion
+        FROM aida.estudiante_de e INNER JOIN aida.plan_de_estudios p
+        ON e.CarreraId = p.CarreraId INNER JOIN aida.materias m
+        ON p.MateriaId = m.MateriaId
+        WHERE e.lu = @lu AND NOT EXISTS (
+            SELECT 1
+            FROM aida.correlativas cor
+            WHERE cor.MateriaId = m.MateriaId AND NOT EXISTS (
+                    SELECT 1
+                    FROM aida.cursa cur
+                    WHERE cur.lu = @lu
+                    AND cur.MateriaId = cor.MateriaCorrelativaId
+                    AND cur.NotaFinal >= 4      -- considera aprobada la nota >= 4
+                )
+        );
     `;
 
-    const result = await pool.request().query(query);
+    const result = await pool.request().input('lu', sql.NVarChar, lu).query(query);
     return result.recordset;
 }
 

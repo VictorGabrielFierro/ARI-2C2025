@@ -16,3 +16,6 @@ GO
 
 GRANT SELECT ON aida.materias TO aida_alumno
 GO
+
+GRANT SELECT ON aida.plan_de_estudios TO aida_alumno
+GO
