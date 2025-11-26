@@ -178,7 +178,7 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administ
         });
 
         // Se asume que buildInsertQuery recibe los nombres de las columnas y los placeholders
-        const insertQuery = buildInsertQuery(tabla, columnasInsertables, placeholders);
+        const insertQuery = buildInsertQuery(tabla, columnasInsertables);
 
         // 10. ⬇️ Ejecutamos la query
         await pool.query(insertQuery, values);

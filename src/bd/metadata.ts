@@ -1,6 +1,6 @@
 // metadatos.ts (Adaptado para PostgreSQL)
 
-import { Pool, QueryResult } from "pg";
+import { Pool } from "pg";
 import { getOwnerPool } from "./conecciones-bd.js";
 
 // ⚠️ NOTA: Si nombreTabla ya incluye el esquema (ej: 'aida.alumnos'), necesitamos dividirlo
