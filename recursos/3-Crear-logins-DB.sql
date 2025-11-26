@@ -18,6 +18,8 @@ BEGIN
 END
 $do$;
 
+GRANT USAGE ON SCHEMA aida TO aida_admin;
+
 -- Dar permisos DML (SELECT, INSERT, UPDATE, DELETE) al usuario aida_admin sobre todas las tablas del esquema 'aida'.
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.alumnos TO aida_admin;
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.cursa TO aida_admin;
@@ -45,6 +47,8 @@ BEGIN
 END
 $do$;
 
+GRANT USAGE ON SCHEMA aida TO aida.alumno;
+
 -- Permisos DML para las acciones de un alumno
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.cursa TO aida_alumno;
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.estudiante_de TO aida_alumno;
@@ -69,6 +73,8 @@ BEGIN
     END IF;
 END
 $do$;
+
+GRANT USAGE ON SCHEMA aida TO aida_login;
 
 -- Dar permisos para manejar la tabla de usuarios (login, registro, actualización de perfil).
 -- NOTA: Se cambió de 'dbo.usuarios' a 'aida.usuarios'.

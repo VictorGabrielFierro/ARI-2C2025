@@ -73,8 +73,8 @@ export async function obtenerInscripcionesAlumno(lu: string) {
         SELECT 
             c."MateriaId",
             c."Cuatrimestre",
-            m.nombre,
-            m.descripcion
+            m."Nombre",
+            m."Descripcion"
         FROM "aida"."cursa" c
         INNER JOIN "aida"."materias" m ON m."MateriaId" = c."MateriaId"
         WHERE c.lu = $1

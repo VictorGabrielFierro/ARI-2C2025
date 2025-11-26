@@ -118,7 +118,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         const pkInfo = meta.pk; // Array de objetos { pk: "nombreCol" }
 
         // Validación de cantidad de parámetros
-        if (!idParts || idParts.length !== pkInfo.length) {
+        if (!idParts) {
             return res.status(400).json({ error: "ID incorrecto para esta tabla" });
         }
         

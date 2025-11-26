@@ -1,7 +1,7 @@
 // metadatos.ts (Adaptado para PostgreSQL)
 
 import { Pool } from "pg";
-import { getOwnerPool } from "./conecciones-bd.js";
+import { getAdminPool } from "./conecciones-bd.js";
 
 // ⚠️ NOTA: Si nombreTabla ya incluye el esquema (ej: 'aida.alumnos'), necesitamos dividirlo
 // para que funcione con information_schema.
@@ -11,7 +11,7 @@ import { getOwnerPool } from "./conecciones-bd.js";
  * @param nombreTabla El nombre de la tabla, puede incluir esquema (ej: 'aida.alumnos').
  */
 export async function obtenerMetadataTabla(nombreTabla: string) {
-    const pool: Pool = await getOwnerPool();
+    const pool: Pool = await getAdminPool();
 
     // Dividir el nombre de la tabla en esquema y nombre (si aplica)
     const parts = nombreTabla.split('.');

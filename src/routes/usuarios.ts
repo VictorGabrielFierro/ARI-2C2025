@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
         
         // 3. ⬇️ Ejecución directa de la query con parámetros posicionales ($1, $2, ...)
         const insertQuery = `
-            INSERT INTO usuarios (username, password_hash, email, rol, lu) 
+            INSERT INTO aida.usuarios (username, password_hash, email, rol, lu) 
             VALUES ($1, $2, $3, $4, $5)
         `;
 
@@ -82,7 +82,7 @@ router.post("/register", async (req, res) => {
                 // Esto requiere que el error de PG contenga el valor o que lo extraigamos, 
                 // pero lo más robusto es comprobar con el valor que el usuario intentó insertar.
                 const checkUser: QueryResult = await pool.query(
-                    `SELECT 1 AS found FROM usuarios WHERE username = $1`, [username]
+                    `SELECT 1 AS found FROM aida.usuarios WHERE username = $1`, [username]
                 );
                 if (checkUser.rows.length > 0) {
                     return res.status(400).json({ error: 'Ya existe un usuario con ese username' });
@@ -91,7 +91,7 @@ router.post("/register", async (req, res) => {
                 // Comprobar LU
                 if (luParam) {
                     const checkLu: QueryResult = await pool.query(
-                        `SELECT 1 AS found FROM usuarios WHERE lu = $1`, [luParam]
+                        `SELECT 1 AS found FROM aida.usuarios WHERE lu = $1`, [luParam]
                     );
                     if (checkLu.rows.length > 0) {
                         return res.status(400).json({ error: 'Ya existe un usuario con esa LU' });

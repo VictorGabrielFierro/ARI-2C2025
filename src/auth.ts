@@ -20,7 +20,7 @@ export async function autenticarUsuario(pool: Pool, username: string, password: 
     // 1. Usamos pool.query() para ejecutar la consulta directamente.
     // 2. Usamos $1 para el parámetro posicional, en lugar de @username.
     // 3. Pasamos los valores de los parámetros en el segundo argumento como un array: [username].
-    const queryText = 'SELECT * FROM usuarios WHERE username = $1';
+    const queryText = 'SELECT * FROM aida.usuarios WHERE username = $1';
     const result = await pool.query(queryText, [username]);
 
     // En 'pg', los registros vienen en el array 'rows'.
