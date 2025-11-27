@@ -45,10 +45,6 @@ export async function getAdminPool(): Promise<Pool> {
 }
 
 export async function getLoginPool(): Promise<Pool> {
-    console.log("DEBUG ENV LOCAL:", {
-    ADMIN_USER: process.env.ADMIN_USER,
-    ADMIN_PASS: process.env.ADMIN_PASS,
-    });
     if (!loginPool) {
         loginPool = new Pool({
             ...baseConfig,
