@@ -17,7 +17,6 @@ async function obtenerHistoria() {
 
     } catch (err) {
         console.error(err);
-        alert("Error al cargar historia académica");
     }
 }
 

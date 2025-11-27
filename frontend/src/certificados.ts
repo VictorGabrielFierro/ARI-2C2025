@@ -26,7 +26,6 @@ async function cargarCertificados() {
 
     } catch (error) {
         console.error(error);
-        alert("No se pudieron cargar los certificados.");
     }
 }
 
