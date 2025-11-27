@@ -1,0 +1,41 @@
+name: workflow_compile
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+
+      - name: Descargar dependencias
+        run: npm install
+
+      - name: Compilar el proyecto
+        run: npm run build
+
+  job2:
+    needs: compile
+    if: |
+      github.ref == 'refs/head/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: DEPLOYMENT
+
+    steps:
+      - name: Deployeamos la aplicacion
+        run: |
+          curl "${{secrets.URL_DEPLOYMENT}}"
