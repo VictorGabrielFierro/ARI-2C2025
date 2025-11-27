@@ -40,23 +40,23 @@ async function llenarTabla(certificados: { archivo: string, lu: string }[]) {
 
 
     const certificadosConDatos = await Promise.all(
-    certificados.map(async cert => {
-        const res = await fetch(
-            `/api/v0/crud/aida.alumnos/alumno/${encodeURIComponent(cert.lu)}`,
-            { headers: getAuthHeaders() }
-        );
+        certificados.map(async cert => {
+            const res = await fetch(
+                `/api/v0/crud/aida.alumnos/alumno/${encodeURIComponent(cert.lu)}`,
+                { headers: getAuthHeaders() }
+            );
 
-        if (!res.ok) throw new Error("Error obteniendo alumno");
+            if (!res.ok) throw new Error("Error obteniendo alumno");
 
-        const alumno = await res.json();
+            const alumno = await res.json();
 
-        return {
-            ...cert,
-            nombre: alumno[0].nombres,
-            apellido: alumno[0].apellido
-        };
-    })
-);
+            return {
+                ...cert,
+                nombre: alumno[0].nombres,
+                apellido: alumno[0].apellido
+            };
+        })
+    );
 
 
     certificadosConDatos.forEach(cert => {
