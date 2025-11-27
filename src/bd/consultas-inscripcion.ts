@@ -58,7 +58,10 @@ export async function obtenerInscripcionesAlumno(lu: string) {
             m."Descripcion"
         FROM "aida"."cursa" c
         INNER JOIN "aida"."materias" m ON m."MateriaId" = c."MateriaId"
-        WHERE c.lu = $1
+        WHERE c.lu = $1 AND c."Cuatrimestre" = (
+            SELECT MAX("cur"."Cuatrimestre")
+            FROM "aida"."cursadas" cur
+        )
         ORDER BY m."Nombre" ASC;
     `;
 
