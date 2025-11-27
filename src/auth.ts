@@ -1,25 +1,35 @@
 import bcrypt from 'bcrypt';
-import { ConnectionPool } from 'mssql'; 
+import { Pool } from 'pg'; // ⬅️ Reemplazamos ConnectionPool de 'mssql' por Pool de 'pg'
 import { Usuario } from "./tipos/index.js";
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
+// ⚠️ Asegúrate de extender la interfaz Request de Express para incluir 'req.user'
+// En un archivo de declaración de tipos (por ejemplo, src/types/express.d.ts)
+// declare global { namespace Express { interface Request { user?: Usuario } } }
 
 export const JWT_SECRET = "clave-ultra-secreta";
 
-// Funciones de hash y verificación
+// --- Funciones de Hash y Verificación (No requieren cambios) ---
 export async function verificarPassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
 }
 
-export async function autenticarUsuario(pool: ConnectionPool, username: string, password: string): Promise<Usuario | null> {
-    const result = await pool.request()
-        .input('username', username)
-        .query('SELECT * FROM usuarios WHERE username = @username');
+// --- Función de Autenticación con 'pg.Pool' ---
+export async function autenticarUsuario(pool: Pool, username: string, password: string): Promise<Usuario | null> {
+    // 1. Usamos pool.query() para ejecutar la consulta directamente.
+    // 2. Usamos $1 para el parámetro posicional, en lugar de @username.
+    // 3. Pasamos los valores de los parámetros en el segundo argumento como un array: [username].
+    const queryText = 'SELECT * FROM aida.usuarios WHERE username = $1';
+    const result = await pool.query(queryText, [username]);
 
-    if (result.recordset.length === 0) return null;
+    // En 'pg', los registros vienen en el array 'rows'.
+    if (result.rows.length === 0) return null;
 
-    const user = result.recordset[0];
+    // 4. Los registros son objetos directamente en el array 'rows'.
+    const user = result.rows[0];
+    
+    // Verificación de contraseña (sin cambios)
     const match = await verificarPassword(password, user.password_hash);
     if (!match) return null;
 
@@ -33,12 +43,13 @@ export async function autenticarUsuario(pool: ConnectionPool, username: string, 
     };
 }
 
-// Para generar un token
+// --- Generar Token (No requiere cambios) ---
 export function generarToken(usuario: string): string {
   return jwt.sign({ usuario }, JWT_SECRET, { expiresIn: "2h" });
 }
 
-// Middleware para verificar token
+// --- Middlewares y Verificación de Token (No requieren cambios) ---
+
 export function verificarTokenMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
@@ -61,7 +72,7 @@ export function verificarTokenMiddleware(req: Request, res: Response, next: Next
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any;
-    // Attach decoded user info to request for downstream handlers
+    // Adjuntar la información de usuario decodificada a la solicitud
     req.user = {
       id: payload.id,
       username: payload.username,
@@ -74,7 +85,7 @@ export function verificarTokenMiddleware(req: Request, res: Response, next: Next
   }
 }
 
-// Middleware factory para exigir roles
+// Middleware factory para exigir roles (No requiere cambios)
 export function requireRole(...allowedRoles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
@@ -89,7 +100,7 @@ export function requireRole(...allowedRoles: string[]) {
 }
 
 
-// Función simple para validar token y devolver boolean
+// Función simple para validar token y devolver boolean (No requiere cambios)
 export function verificarToken(token: string): boolean {
   try {
     jwt.verify(token, JWT_SECRET);

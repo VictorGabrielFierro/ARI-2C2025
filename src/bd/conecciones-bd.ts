@@ -1,112 +1,99 @@
 // conecciones-bd.ts
-import sql, { config as SqlConfig, ConnectionPool } from 'mssql';
+import dotenv from 'dotenv';
+dotenv.config()
+dotenv.config({
+  path: process.env.ENV_FILE === '.env.production'
+    ? '.env.production'
+    : '.env.development'
+});
+import { Pool, PoolConfig } from 'pg';
 
-// ------------------ CONFIGURACIONES ------------------
+// ------------------ CONFIGURACIÓN ------------------
 
-// Pool para usuario admin
-const dbConfigAdmin: SqlConfig = {
-    user: 'aida_admin',
-    password: 'Admin2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
-};
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Pool para usuario logging (solo tiene permisos de SELECT sobre usuarios)
-const dbConfigLogging: SqlConfig = {
-    user: 'aida_login',
-    password: 'Login2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
-};
-
-// Pool para usuario owner
-const dbConfigOwner: SqlConfig = {
-    user: 'aida_owner',
-    password: 'Owner2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
-};
-
-// Pool para usuario owner
-const dbConfigAlumno: SqlConfig = {
-    user: 'aida_alumno',
-    password: 'Alumno2025',
-    server: 'localhost',
-    database: 'aida_db',
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-    },
+// Config base (dinámico por env)
+const baseConfig: PoolConfig = {
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    port: Number(process.env.DB_PORT),
+    max: 10,
+    idleTimeoutMillis: 30000,
+    ssl: isProduction
+        ? { rejectUnauthorized: false }
+        : undefined, // en local → sin SSL
 };
 
 // ------------------ POOLS ------------------
 
-let adminPool: ConnectionPool | null = null;
-let loginPool: ConnectionPool | null = null;
-let ownerPool: ConnectionPool | null = null;
-let alumnoPool: ConnectionPool | null = null;
+let adminPool: Pool | null = null;
+let loginPool: Pool | null = null;
+let ownerPool: Pool | null = null;
+let alumnoPool: Pool | null = null;
 
 // ------------------ FUNCIONES DE CONEXIÓN ------------------
 
-export async function getAdminPool(): Promise<ConnectionPool> {
+export async function getAdminPool(): Promise<Pool> {
     if (!adminPool) {
-        adminPool = await new sql.ConnectionPool(dbConfigAdmin).connect();
+        adminPool = new Pool({
+            ...baseConfig,
+            user: process.env.ADMIN_USER,
+            password: process.env.ADMIN_PASS,
+        });
     }
     return adminPool;
 }
 
-export async function getLoginPool(): Promise<ConnectionPool> {
+export async function getLoginPool(): Promise<Pool> {
+    console.log("DEBUG ENV LOCAL:", {
+    ADMIN_USER: process.env.ADMIN_USER,
+    ADMIN_PASS: process.env.ADMIN_PASS,
+    });
     if (!loginPool) {
-        loginPool = await new sql.ConnectionPool(dbConfigLogging).connect();
+        loginPool = new Pool({
+            ...baseConfig,
+            user: process.env.LOGIN_USER,
+            password: process.env.LOGIN_PASS,
+        });
     }
     return loginPool;
 }
 
-export async function getOwnerPool(): Promise<ConnectionPool> {
+export async function getOwnerPool(): Promise<Pool> {
     if (!ownerPool) {
-        ownerPool = await new sql.ConnectionPool(dbConfigOwner).connect();
+        ownerPool = new Pool({
+            ...baseConfig,
+            user: process.env.OWNER_USER,
+            password: process.env.OWNER_PASS,
+        });
     }
     return ownerPool;
 }
 
-export async function getAlumnoPool(): Promise<ConnectionPool> {
+export async function getAlumnoPool(): Promise<Pool> {
     if (!alumnoPool) {
-        alumnoPool = await new sql.ConnectionPool(dbConfigAlumno).connect();
+        alumnoPool = new Pool({
+            ...baseConfig,
+            user: process.env.ALUMNO_USER,
+            password: process.env.ALUMNO_PASS,
+        });
     }
     return alumnoPool;
 }
-// Funcion Selectora de Pool
 
-export async function obtenerPoolPorRol(rol?: string): Promise<ConnectionPool> {
+// Función Selectora por Rol
+export async function obtenerPoolPorRol(rol?: string): Promise<Pool> {
     switch (rol) {
-        case 'administrador': 
-            // Si es admin, le damos la conexión con superpoderes
-            return await getAdminPool(); 
-            
+        case 'administrador':
+            return getAdminPool();
+
         case 'owner':
-            // Si usas este rol para cosas críticas
-            return await getOwnerPool();
+            return getOwnerPool();
 
         case 'usuario':
-            // Si usas este rol para cosas críticas
-            return await getAlumnoPool();
+            return getAlumnoPool();
 
         default:
-            // Para cualquier otro caso (o si rol es undefined),
-            // damos la conexión restringida de solo lectura/login
-            return await getLoginPool();
+            return getLoginPool();
     }
 }
-

@@ -1,11 +1,14 @@
 import { Router } from "express";
 import { verificarTokenMiddleware, requireRole } from "../auth.js";
 import { obtenerMetadataTabla } from "../bd/metadata.js";
-import { obtenerPoolPorRol } from "../bd/conecciones-bd.js";
-import sql, { ConnectionPool } from "mssql";
+// 1. ⬇️ Reemplazamos la importación de `ConnectionPool` de mssql por `Pool` de pg
+import { obtenerPoolPorRol } from "../bd/conecciones-bd.js"; 
+import { Pool } from "pg"; 
+// 2. ⬇️ Eliminamos la importación de 'mssql' ya que no usamos sus tipos
+// import sql, { ConnectionPool } from "mssql";
 import {
     buildSelectAllQuery,
-    buildSelectBaseQuery, // IMPORTANTE: Agregada esta importación
+    buildSelectBaseQuery, 
     buildInsertQuery,
     buildUpdateQuery,
     buildDeleteQuery
@@ -14,38 +17,55 @@ import { generarTituloPorLU } from "../certificados.js"
 
 const router = Router();
 
-async function egresarAlumnoAutomaticamente(lu:string, pool:ConnectionPool){
-    // ... (Tu lógica de egreso se mantiene igual) ...
-    const carrera = pool.request().
-    input('lu', sql.NVarChar, lu).
-    query(`SELECT CarreraId FROM aida.estudiante_de WHERE lu = @lu`)
+// 3. ⬇️ La función ahora espera un `Pool` de 'pg'
+async function egresarAlumnoAutomaticamente(lu: string, pool: Pool) {
+    // La lógica de egreso debe cambiar para usar `pg.Pool.query` con $1, $2, etc.
+
+    // 1. Obtener CarreraId
+    const carreraResult = await pool.query(
+        // Cambiamos @lu por $1 y eliminamos el prefijo 'aida.' si no es necesario o ajustamos al esquema de PG
+        `SELECT "CarreraId" FROM "aida"."estudiante_de" WHERE lu = $1`, 
+        [lu]
+    );
 
     // Ojo: Valida que exista alumno antes de acceder a [0]
-    if ((await carrera).recordset.length === 0) return;
+    if (carreraResult.rows.length === 0) return;
 
-    const carreraId = (await carrera).recordset[0].CarreraId;
+    const carreraId = carreraResult.rows[0].CarreraId;
 
-    const materiasFaltantesAlumno = await pool.request()
-    .input("carreraId", sql.Int, carreraId)
-    .input("lu", sql.NVarChar, lu)
-    .query(`(SELECT MateriaId 
-        FROM aida.plan_de_estudios 
-        WHERE CarreraId = @carreraId) 
+    // 2. Materias Faltantes
+    const materiasFaltantesResult = await pool.query(
+        // Usamos $1 y $2. PostgreSQL soporta EXCEPT
+        `(SELECT "MateriaId" 
+            FROM "aida"."plan_de_estudios" 
+            WHERE "CarreraId" = $1) 
         EXCEPT (
-        SELECT MateriaId
-        FROM aida.cursa
-        WHERE lu = @lu AND NotaFinal >= 4
-        )`) 
+            SELECT "MateriaId"
+            FROM "aida"."cursa"
+            WHERE lu = $2 AND "NotaFinal" >= 4
+        )`,
+        [carreraId, lu]
+    ); 
 
-    if ((await materiasFaltantesAlumno).recordset.length == 0){
-        pool.request()
-        .input("lu", sql.NVarChar, lu)
-        .query(`UPDATE aida.alumnos 
-        SET egreso = GETDATE(), titulo_en_tramite = GETDATE()
-        WHERE lu = @lu`);
+    // 3. Egresar si no faltan materias
+    if (materiasFaltantesResult.rows.length === 0) {
+        // Usamos NOW() o CURRENT_TIMESTAMP en PostgreSQL en lugar de GETDATE()
+        await pool.query(
+            `UPDATE "aida"."alumnos" 
+            SET egreso = NOW(), titulo_en_tramite = NOW()
+            WHERE lu = $1`,
+            [lu]
+        );
         generarTituloPorLU(lu ,"/certificados");
     }
 }
+
+// ---
+// ⚠️ NOTA IMPORTANTE sobre `queries-genericas.js`:
+// Estas funciones ahora deben generar SQL compatible con PostgreSQL (p. ej., usando comillas
+// dobles "nombre_columna" en lugar de corchetes [nombre_columna] y usando $1, $2, etc.
+// para los placeholders, en lugar de @nombre).
+// ---
 
 /**
  * RUTAS CRUD
@@ -56,6 +76,7 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
     try {
         const tabla = req.params.tabla;
         const userRole = req.user?.rol;
+        // 4. ⬇️ El pool es ahora un objeto `pg.Pool`
         const pool = await obtenerPoolPorRol(userRole);
         
         if (!pool) return res.status(500).json({ error: "No hay conexión a BD disponible" });
@@ -67,9 +88,11 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
         
         // 2. Pasamos los nombres de PK para que la query arme el ORDER BY correcto
         const query = buildSelectAllQuery(tabla, pkNames);
-        const result = await pool.request().query(query);
+        // 5. ⬇️ Ejecución directa con pool.query()
+        const result = await pool.query(query); 
 
-        return res.json(result.recordset);
+        // 6. ⬇️ Accedemos a los resultados con `result.rows`
+        return res.json(result.rows);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Error al obtener registros" });
@@ -80,8 +103,8 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
 router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        //const userRole = req.user?.rol;
         const pool = await obtenerPoolPorRol('administrador');
+        
         // Decodificamos ID compuesto
         const idParts = req.params.id?.split("__").map(decodeURIComponent);
         if (idParts?.includes('actualLU')){
@@ -98,27 +121,29 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         if (!idParts) {
             return res.status(400).json({ error: "ID incorrecto para esta tabla" });
         }
-
-        const request = await pool.request();
+        
+        // 7. ⬇️ Ahora no usamos `pool.request()`. Armamos la query con placeholders $1, $2, etc.
         const whereConditions: string[] = [];
+        const params: (string | null | undefined)[] = []; // Array para los valores de los parámetros
 
-        // Inyectamos valores y preparamos condiciones WHERE (col = @col)
+        // Inyectamos valores y preparamos condiciones WHERE (col = $n)
         idParts.forEach((id, index) => {
-            request.input(pkInfo[index].pk, sql.NVarChar, id);
-            whereConditions.push(`[${pkInfo[index].pk}] = @${pkInfo[index].pk}`);
+            const pkName = pkInfo[index]?.pk;
+            params.push(id);
+            // El placeholder en PostgreSQL es posicional ($1, $2, ...)
+            whereConditions.push(`"${pkName}" = $${index + 1}`); 
         });
 
         // Usamos SelectBase (SIN Order By) + WHERE construído con AND
+        // Se asume que buildSelectBaseQuery genera SQL de PostgreSQL
         const stringQuery = `${buildSelectBaseQuery(tabla)} WHERE ${whereConditions.join(" AND ")}`;
         
-        const result = await request.query(stringQuery);
+        // 8. ⬇️ Ejecutamos la query pasando el array de parámetros
+        const result = await pool.query(stringQuery, params);
 
-
-        // if (!result.recordset.length)
-        //     return res.status(404).json({ error: "No encontrado" });
-
-        // Retornamos el objeto solo (no array)
-        return res.json(result.recordset); 
+        // Retornamos el array de objetos, o solo el primer elemento si quieres un objeto único
+        // if (!result.rows.length) return res.status(404).json({ error: "No encontrado" });
+        return res.json(result.rows); 
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Error al obtener registro" });
@@ -142,16 +167,23 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administ
             .filter(c => !c.identity)
             .map(c => c.name);
 
-        const request = pool.request();
-        columnasInsertables.forEach(c => {
-            request.input(c, sql.NVarChar, body[c] ?? null);
+        // 9. ⬇️ Creamos los arrays para los valores y los placeholders
+        const values: (any)[] = [];
+        const placeholders: string[] = [];
+        
+        columnasInsertables.forEach((c, index) => {
+            values.push(body[c] ?? null);
+            // Placeholder posicional: $1, $2, $3...
+            placeholders.push(`$${index + 1}`); 
         });
 
-        await request.query(buildInsertQuery(tabla, columnasInsertables));
+        // Se asume que buildInsertQuery recibe los nombres de las columnas y los placeholders
+        const insertQuery = buildInsertQuery(tabla, columnasInsertables);
 
-        if (tabla == 'aida.cursa'){
-            // No usamos await aquí para no bloquear la respuesta al usuario, 
-            // a menos que sea critico que termine antes de responder.
+        // 10. ⬇️ Ejecutamos la query
+        await pool.query(insertQuery, values);
+
+        if (tabla === 'aida.cursa'){ // Se usa triple igual para mayor consistencia
             egresarAlumnoAutomaticamente(body['lu'], pool).catch(console.error);
         }
 
@@ -169,76 +201,76 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         const userRole = req.user?.rol;
         const pool = await obtenerPoolPorRol(userRole);
         
-        // Decodificamos el ID
         const idParts = req.params.id?.split('__').map(decodeURIComponent);
-        const body = req.body; // Los datos nuevos
+        const body = req.body; 
 
         if (!pool) return res.status(500).json({ error: "No hay conexión" });
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
-        // 1. Obtenemos Metadata (Qué columnas existen y cuáles son PK)
         const meta = await obtenerMetadataTabla(tabla);
         const pkNames = meta.pk.map(p => p.pk); 
 
-        // 2. FILTRO DE COLUMNAS (La parte importante)
-        // Seleccionamos solo las columnas que:
-        // A) No sean Clave Primaria (no se editan)
-        // B) Existan en el 'body' que envió el usuario
-        // C) (Opcional) Que el valor no sea null si quieres protegerte extra
         const columnasAActualizar = meta.columns
-            .filter(c => !pkNames.includes(c.name)) // Excluir PKs
-            .filter(c => Object.prototype.hasOwnProperty.call(body, c.name)) // Solo las que vienen en el body
+            .filter(c => !pkNames.includes(c.name)) 
+            .filter(c => Object.prototype.hasOwnProperty.call(body, c.name)) 
             .map(c => c.name);
 
         if (columnasAActualizar.length === 0) {
             return res.status(400).json({ error: "No se enviaron datos válidos para actualizar." });
         }
 
-        const request = pool.request();
+        // 11. ⬇️ La lógica cambia: armamos dos sets de parámetros (SET y WHERE)
+        const updateValues: (any)[] = [];
+        const updateSets: string[] = [];
+        let paramIndex = 1;
 
-        // 3. Inyectamos los valores de la PK (Para el WHERE)
-        pkNames.forEach((p, indice) => {
-            request.input(p, sql.NVarChar, idParts?.[indice]);
+        // 1. Inyectamos los valores del Body (Para el SET: "col" = $1, "col2" = $2)
+        columnasAActualizar.forEach(c => {
+            updateValues.push(body[c]);
+            updateSets.push(`"${c}" = $${paramIndex++}`); 
         });
         
-        // 4. Inyectamos los valores del Body (Para el SET)
-        columnasAActualizar.forEach(c => {
-            const valor = body[c];
-            // Aquí SQL Server recibirá el valor exacto que mandó el frontend
-            request.input(c, sql.NVarChar, valor); 
+        // 2. Inyectamos los valores de la PK (Para el WHERE: "pk1" = $N, "pk2" = $N+1)
+        const whereConditions: string[] = [];
+        pkNames.forEach((p) => {
+            updateValues.push(idParts?.[updateValues.length - columnasAActualizar.length]);
+            whereConditions.push(`"${p}" = $${paramIndex++}`);
         });
 
-        // 5. Construimos la query SOLO con las columnas filtradas
-        const query = buildUpdateQuery(tabla, columnasAActualizar, pkNames);
+        // 3. Construimos la query (se asume que buildUpdateQuery usa los arrays)
+        const query = buildUpdateQuery(
+            tabla, 
+            updateSets, // Contiene "col = $n"
+            whereConditions // Contiene "pk = $n"
+        ); 
 
-        // Debug (Opcional, para que veas qué query se armó)
-        // console.log("Query dinámica:", query); 
-
-        const result = await request.query(query);
-        if (result.rowsAffected[0] === 0) {
+        // 4. Ejecutamos
+        const result = await pool.query(query, updateValues);
+        
+        // rowsAffected es un array de números en mssql. En pg, es una propiedad simple
+        // 'rowCount' en el objeto resultado de `pg`
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "No se encontró el registro para actualizar (ID incorrecto)" });
         }
 
-        // 6. Lógica extra (egresos)
-        if (tabla == 'aida.cursa'){
-             // Usamos catch para que un error en el egreso no falle la request HTTP
+        // 5. Lógica extra (egresos)
+        if (tabla === 'aida.cursa'){
              if(idParts) egresarAlumnoAutomaticamente(idParts[0] ?? "", pool).catch(console.error);
         }
 
         return res.json({ mensaje: "Registro actualizado" });
     } catch (err) {
         console.error("❌ ERROR PUT:", err);
-        // Devolvemos el mensaje detallado de SQL para facilitar el debug
-        return res.status(500).json({ error: "Error al actualizar registro", detalle: (err as any).message });
+        // El error de pg puede no tener la propiedad `message` de forma directa
+        return res.status(500).json({ error: "Error al actualizar registro", detalle: (err as Error).message });
     }
 });
 
 
-// ---------------- DELETE (Con Logs Debug) ----------------
+// ---------------- DELETE ----------------
 router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
-        // Decodificamos el ID
         const idParts = req.params.id?.split('__').map(decodeURIComponent);
 
         const userRole = req.user?.rol;
@@ -247,34 +279,31 @@ router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('admi
         if (!pool) return res.status(500).json({ error: "No hay conexión" });
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
-        // 1. Lógica de seguridad para tabla 'usuarios' (si la implementaste antes)
-        if (tabla.includes('usuarios') && userRole === 'administrador') {
-             // Si el admin no debe borrar usuarios, aquí iría el bloqueo o cambio de pool
-             // Si ya manejas el pool dinámico arriba, ignora esto.
-        }
-
         const meta = await obtenerMetadataTabla(tabla);
         const pk = meta.pk;
 
-        // Validación de cantidad de IDs vs PKs
         if (!idParts || idParts.length !== pk.length) {
             return res.status(400).json({ error: "ID inválido para esta tabla" });
         }
+        
+        // 12. ⬇️ Armamos los arrays para la query de DELETE
+        const params: (string | null | undefined)[] = [];
+        const pkConditions: string[] = [];
 
-        const request = await pool.request();
-
-        // Asignación de parámetros
+        // Asignación de parámetros posicionales
         pk.forEach((p, indice) => {
-            const valor = idParts?.[indice];
-            request.input(p.pk, sql.NVarChar, valor);
+            params.push(idParts?.[indice]);
+            pkConditions.push(`"${p.pk}" = $${indice + 1}`);
         });
 
-        // Ejecución
-        const querySql = buildDeleteQuery(tabla, pk.map(p => p.pk));
-        const result = await request.query(querySql);
+        // Ejecución (asumiendo que buildDeleteQuery usa la condición WHERE)
+        const querySql = buildDeleteQuery(tabla, pkConditions); // Pasamos las condiciones ya listas
+
+        // 13. ⬇️ Ejecución y chequeo de rowCount
+        const result = await pool.query(querySql, params);
 
         // Verificación de éxito
-        if (result.rowsAffected[0] === 0) {
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "El registro no existe o no se pudo eliminar." });
         }
 
