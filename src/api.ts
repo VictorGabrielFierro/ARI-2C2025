@@ -10,6 +10,7 @@ import certificadosRouter from "./routes/certificados.js";
 import { verificarTokenMiddleware, requireRole } from "./auth.js"; // asegurate de la ruta
 
 
+
 const app = express();
 const PORT = 3000;
 const __dirname = carpetaDelArchivoActual();
