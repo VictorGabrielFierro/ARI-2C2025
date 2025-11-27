@@ -13,9 +13,7 @@ import {
 
 const router = Router();
 
-/* ========================
-   📌 1. Obtener lista de materias
-   ======================== */
+// Obtener lista de materias
 router.get("/materias", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const lu = req.user?.lu;
@@ -27,9 +25,8 @@ router.get("/materias", verificarTokenMiddleware, async (req: Request, res: Resp
     }
 });
 
-/* ============================================
-   📌 2. Obtener la cursada más reciente de X materia
-   ============================================ */
+
+// Obtener la cursada más reciente de X materia
 router.get("/cursadas/ultima/:materiaId", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const materiaId = Number(req.params.materiaId);
@@ -52,9 +49,7 @@ router.get("/cursadas/ultima/:materiaId", verificarTokenMiddleware, async (req: 
     }
 });
 
-/* =================================================
-   📌 3. Obtener materias en las que está inscripto un alumno
-   ================================================= */
+// Obtener materias en las que está inscripto un alumno
 router.get("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const lu = req.user?.lu;
@@ -78,9 +73,7 @@ router.get("/cursa", verificarTokenMiddleware, async (req: Request, res: Respons
     }
 });
 
-/* =======================
-   📌 4. Inscribir alumno
-   ======================= */
+// Inscribir alumno
 router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const {materiaId, cuatrimestre } = req.body;
@@ -91,7 +84,6 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
         }
 
         const requester = (req as any).user;
-        // Allow admins or the owner (lu matches token)
         if (requester?.rol !== 'administrador' && requester?.lu !== lu) {
             return res.status(403).json({ error: 'Acceso denegado' });
         }
@@ -110,9 +102,7 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
     }
 });
 
-/* ==========================
-   📌 5. Desinscribir alumno
-   ========================== */
+// Desinscribir alumno
 router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
         const {materiaId, cuatrimestre } = req.body;
@@ -123,7 +113,6 @@ router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Resp
         }
 
         const requester = (req as any).user;
-        // Allow admins or the owner (lu matches token)
         if (requester?.rol !== 'administrador' && requester?.lu !== lu) {
             return res.status(403).json({ error: 'Acceso denegado' });
         }

@@ -5,14 +5,8 @@ import { verificarTokenMiddleware, requireRole } from "../auth.js";
 
 const router = Router();
 
-// Ruta donde guardás los certificados HTML
 const CERTIFICADOS_DIR = path.join(process.cwd(), "certificados"); 
-// Asegurate que coincida con tu carpeta real
 
-// ---------------------
-// GET /certificados
-// Lista todos los archivos existentes
-// ---------------------
 router.get("/certificados", verificarTokenMiddleware, requireRole('administrador'), async (_req: Request, res: Response) => {
     try {
         const archivos = fs.readdirSync(CERTIFICADOS_DIR);
@@ -32,10 +26,6 @@ router.get("/certificados", verificarTokenMiddleware, requireRole('administrador
     }
 });
 
-// ---------------------
-// GET /certificados/:archivo
-// Devuelve el archivo para descargar
-// ---------------------
 router.get("/certificados/descargar/:archivo", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const archivo = req.params.archivo;
     if (!archivo){

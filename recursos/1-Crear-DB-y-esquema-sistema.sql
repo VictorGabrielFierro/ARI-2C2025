@@ -1,13 +1,4 @@
-
--- 1. CREACIÓN DE LA BASE DE DATOS (Generalmente se hace fuera del script,
---    pero si se necesita aquí, se usa la sintaxis IF NOT EXISTS)
--- NOTA: Si ya estás conectado a una DB, este comando fallará.
--- CREATE DATABASE aida_db;
-
--- 2. CREACIÓN DE ROL Y SCHEMA
--- En PostgreSQL, los usuarios son "roles" que pueden ser dueños de objetos.
-
--- Crea el rol (usuario) si no existe.
+-- Ejecutar primero esto separado
 DO
 $do$
 BEGIN
@@ -17,18 +8,15 @@ BEGIN
 END
 $do$;
 
+-- luego ejecutar esta linea
 CREATE DATABASE aida_db OWNER aida_owner;
 
--- Crea el schema (similar a los namespaces) y asigna el dueño
+-- luego ejecutar todo lo demas
 CREATE SCHEMA IF NOT EXISTS aida AUTHORIZATION aida_owner;
-
--- 3. AJUSTES DE TIPOS DE DATOS
--- PostgreSQL no usa NVARCHAR; se utiliza VARCHAR o TEXT.
--- En PostgreSQL, las cadenas de caracteres se definen con VARCHAR o TEXT.
 
 -- Crear tabla alumnos
 CREATE TABLE aida.alumnos (
-    lu VARCHAR(50) PRIMARY KEY, -- NVARCHAR(50) -> VARCHAR(50)
+    lu VARCHAR(50) PRIMARY KEY,
     apellido VARCHAR(50) NOT NULL,
     nombres VARCHAR(50) NOT NULL,
     titulo VARCHAR(100) NULL,
@@ -38,10 +26,9 @@ CREATE TABLE aida.alumnos (
 
 -- Crear tabla materias
 CREATE TABLE aida.materias (
-    "MateriaId" INTEGER PRIMARY KEY, -- INT -> INTEGER
+    "MateriaId" INTEGER PRIMARY KEY,
     "Nombre" VARCHAR(100) NOT NULL,
     "Descripcion" VARCHAR(500) NULL
-    -- NOTA: Se eliminó la coma final innecesaria del script original.
 );
 
 -- Crear tabla de cursadas

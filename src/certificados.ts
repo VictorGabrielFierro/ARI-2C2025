@@ -6,7 +6,6 @@ import { ResultadoTitulo, Alumno } from "./tipos/index.js";
 import { ERRORES } from "./constantes/errores.js";
 
 
-
 export async function generarTituloPorFecha(fecha: string, salida: string){
    try {
         const resultados: ResultadoTitulo[] = [];
@@ -17,7 +16,6 @@ export async function generarTituloPorFecha(fecha: string, salida: string){
         }
         return resultados
    } catch (error) {
-        // Si ejecuta esto no hay alumnos egresados en esa fecha o problema al consultar base de datos
         throw error;
    }
 }
@@ -29,7 +27,6 @@ export async function generarTituloPorLU(LU:string, salida:string) {
         return resultados
         
     } catch (error) {
-        // Si ejecuta esto no hay alumno con ese LU o problema al consultar base de datos
         throw error;
     }
     
@@ -38,25 +35,20 @@ export async function generarTituloPorLU(LU:string, salida:string) {
 export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
     let resultadoTitulo: ResultadoTitulo = {lu: alumno.lu, archivo: null, error: null}
 
-    // Verificar que el alumno esté egresado
     if (!alumno.egreso) {
         resultadoTitulo.error = ERRORES.ALUMNO_NO_EGRESADO
         return resultadoTitulo
     }
     try {
-        //reviso que exista la carpeta de salida, si no existe la creo
         const outputDir = path.join(process.cwd(), carpetaSalida);
         await fs.mkdir(outputDir, { recursive: true });
 
-        // Busco la ruta del archivo actual
         const __filename = fileURLToPath(import.meta.url);
-        // Busco la carpeta del archivo actual
         const __dirname = path.dirname(__filename);
 
         console.log("filename: " + __filename)
         console.log("dirname: " + __dirname)
 
-        // Leo el html
         const plantillaPath = path.join(__dirname, '..', 'recursos', 'plantilla-certificado-titulo.html');
         let html = await fs.readFile(plantillaPath, 'utf8');
 
@@ -69,15 +61,13 @@ export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
                     .replace(/\[FECHA\]/g, new Date().toLocaleDateString());
 
         // Sanitizar LU. Evito el / del LU y lo cambio por -
-        const sanitizedLU = alumno.lu.replace('/', '-');
+        const LUsanitizado = alumno.lu.replace('/', '-');
 
-        // Ruta completa del archivo a guardar
-        const nombreArchivo = `titulo_${sanitizedLU}.html`
+        const nombreArchivo = `titulo_${LUsanitizado}.html`
         const filePath = path.join(__dirname, '..', carpetaSalida, nombreArchivo);
         
         console.log("Generando archivo en: " + filePath)
 
-        // Guardar el HTML
         await fs.writeFile(filePath, html);
         resultadoTitulo.archivo = path.join(carpetaSalida, nombreArchivo);
 

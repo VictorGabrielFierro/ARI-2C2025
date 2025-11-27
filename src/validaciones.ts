@@ -14,10 +14,8 @@ export function validarFecha(fecha: string): boolean {
     const month = Number(match[2]);
     const day = Number(match[3]);
 
-    // Verificar mes válido
     if (month < 1 || month > 12) return false;
 
-    // Verificar día válido según el mes
     const diasPorMes = [31, (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     if (day < 1 || day > diasPorMes[month - 1]!) return false;
 
@@ -34,26 +32,21 @@ export function validarLU(lu: string | null | undefined): boolean {
 }
 
 export async function validarCSV(carpetaBase: string, nombre: string): Promise<string> {
-    // 1. Evitar path traversal y rutas absolutas
     if (nombre.includes('..') || path.isAbsolute(nombre)) {
         throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
-    // 2. Construir ruta absoluta del archivo
     const archivoAbsoluto = path.resolve(path.join(carpetaBase, nombre));
 
-    // 3. Verificar que la ruta final esté dentro de la carpeta base
     const carpetaSegura = path.resolve(carpetaBase);
     if (!archivoAbsoluto.startsWith(carpetaSegura + path.sep)) {
         throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
-    // 4. Verificar extensión .csv
     if (path.extname(nombre).toLowerCase() !== '.csv') {
         throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
-    // 5. Verificar que existe y es un archivo
     try {
         const stats = await fs.stat(archivoAbsoluto);
         if (!stats.isFile()) {
@@ -63,15 +56,14 @@ export async function validarCSV(carpetaBase: string, nombre: string): Promise<s
         throw new Error(ERRORES.ARCHIVO_INVALIDO)
     }
 
-    // Todo OK
     return archivoAbsoluto;
 }
 
 // Validar nombre, apellido, título: puede ser varias palabras separadas por espacios, solo letras
 export function validarNombreApellidoTitulo(valor: string | null | undefined): boolean {
-    if (!valor) return true; // Permitir nulo
+    if (!valor) return true;
     const titulo = valor.trim();
-    if (!titulo) return false; // No vacío
+    if (!titulo) return false;
     // Permite varias palabras separadas por un espacio, solo letras
     return /^([A-Za-z]+ ?)+$/.test(titulo);
 }
