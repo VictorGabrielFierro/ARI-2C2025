@@ -2,7 +2,10 @@ name: workflow_compile
 on:
   push:
     branches:
-      - main
+      - '*'
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
   compile:
@@ -22,3 +25,17 @@ jobs:
 
       - name: Compilar el proyecto
         run: npm run build
+
+  job2:
+    needs: compile
+    if: |
+      github.ref == 'refs/head/main'
+    runs-on: ubuntu-latest
+
+    enviroment:
+      name: DEPLOYMENT
+
+    steps:
+      - name: Deployeamos la aplicacion
+        run: |
+          curl "${{secrets.URL_DEPLOYMENT}}"
