@@ -19,14 +19,13 @@ const salida = '/certificados';
 router.get("/lu/:lu", verificarTokenMiddleware, async (req: Request, res: Response) => {
     const luParam = req.params.lu;
 
-    // Verifico que lu no sea undefined, null o vacio y quito espacios al final
     if (typeof luParam !== "string" || !luParam.trim()) {
       return res.status(400).json({ error: ERRORES.LU_INVALIDA });
     }
 
     const LU = luParam.trim();
 
-        try {
+    try {
         if(!validarLU(LU)){
             return res.status(400).json({ error: ERRORES.LU_INVALIDA });
         } 
@@ -43,20 +42,17 @@ router.get("/lu/:lu", verificarTokenMiddleware, async (req: Request, res: Respon
             };
             return res.status(200).json(respuesta);
         } else {
-            // Si ejecuta esto el error se produjo en generarTitulo()
             switch (resultadoTitulo.error) {
                 case ERRORES.ALUMNO_NO_EGRESADO:
                     return res.status(400).json({ error: `${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${resultadoTitulo.error}` });
                 case ERRORES.FALLA_AL_GENERAR_CERTIFICADO:
                     return res.status(400).json({ error: `${ERRORES.CERTIFICADO_NO_GENERADO} LU: ${LU}. Descripcion de error: ${resultadoTitulo.error}` });
                 default:
-                    // Otro error inesperado
                     return res.status(500).json({ error: ERRORES.INTERNO });
             }
         }
         
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
             return res.status(404).json({ error: mensaje });
@@ -64,7 +60,6 @@ router.get("/lu/:lu", verificarTokenMiddleware, async (req: Request, res: Respon
         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
             return res.status(500).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 });
@@ -101,7 +96,6 @@ router.get("/fecha/:fecha", verificarTokenMiddleware, requireRole('administrador
         }
         return res.status(200).json(resultadoJSON);
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorFecha()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.SIN_ALUMNOS_EGRESADOS_EN_FECHA_PROPORCIONADO) {
             return res.status(404).json({ error: mensaje });
@@ -109,7 +103,6 @@ router.get("/fecha/:fecha", verificarTokenMiddleware, requireRole('administrador
         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
             return res.status(500).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
     
@@ -119,7 +112,6 @@ router.get("/fecha/:fecha", verificarTokenMiddleware, requireRole('administrador
 router.patch("/archivo", verificarTokenMiddleware, requireRole('administrador'), async (req: Request, res: Response) => {
     const alumnos = req.body;
     try {
-        // Verificar que no esté vacío
         if (!Array.isArray(alumnos) || alumnos.length === 0) {
             return res.status(400).send({ error: ERRORES.ARCHIVO_INVALIDO });
         }
@@ -130,17 +122,12 @@ router.patch("/archivo", verificarTokenMiddleware, requireRole('administrador'),
         }
 
         await cargarJSON(alumnos);
-
-        // Enviar respuesta exitosa
         return res.status(200).send({ mensaje: EXITOS.DATOS_CARGADOS_CORRECTAMENTE });
-
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en cargarJSON()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.ARCHIVO_INVALIDO) {
             return res.status(404).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 })
@@ -176,7 +163,6 @@ router.delete("/alumnos/:lu", verificarTokenMiddleware, requireRole('administrad
         return res.status(200).json({ mensaje: `Alumno ${LU} eliminado correctamente` });
         
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en eliminarAlumnoPorLU()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.ALUMNO_NO_ENCONTRADO) {
             return res.status(404).json({ error: mensaje });
@@ -184,7 +170,6 @@ router.delete("/alumnos/:lu", verificarTokenMiddleware, requireRole('administrad
         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD) {
             return res.status(500).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 });
@@ -200,13 +185,11 @@ router.post("/alumno", verificarTokenMiddleware, requireRole('administrador'), a
         titulo_en_tramite: true,
         egreso: true
     };
-    // Validar campos obligatorios
     const resultadoValidacion = validarAlumno(
         { lu, apellido, nombres, titulo, titulo_en_tramite, egreso },
         reglasValidacion
     );
     if (!resultadoValidacion.valido) {
-        // lanzar el error correspondiente al front
         return res.status(400).json({ error: resultadoValidacion.error });
     }
     try {
@@ -225,7 +208,6 @@ router.post("/alumno", verificarTokenMiddleware, requireRole('administrador'), a
         });
 
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en insertarAlumno()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.LU_DUPLICADA) {
             return res.status(400).json({ error: mensaje });
@@ -233,7 +215,6 @@ router.post("/alumno", verificarTokenMiddleware, requireRole('administrador'), a
         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD || mensaje === ERRORES.FALLA_AL_CARGAR_DATOS) {
             return res.status(500).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 });
@@ -241,14 +222,12 @@ router.post("/alumno", verificarTokenMiddleware, requireRole('administrador'), a
 // Editar un alumno
 router.put("/alumno/:lu", verificarTokenMiddleware, requireRole('administrador'), async (req: any, res: Response) => {
     try {
-        const luViejo = decodeURIComponent(req.params.lu); // LU vieja
+        const luViejo = decodeURIComponent(req.params.lu);
         const { luNuevo: lu, apellido, nombres, titulo, titulo_en_tramite, egreso } = req.body;;
 
-        // Validar LU vieja
         if (!luViejo || !validarLU(luViejo)) {
             return res.status(400).json({ error: ERRORES.LU_INVALIDA });
         }
-        // Validar campos obligatorios
         const reglasValidacion = {
             lu: true,
             apellido: true,
@@ -262,7 +241,6 @@ router.put("/alumno/:lu", verificarTokenMiddleware, requireRole('administrador')
             reglasValidacion
         );
         if (!resultadoValidacion.valido) {
-            // lanzar el error correspondiente al front
             return res.status(400).json({ error: resultadoValidacion.error });
         }
         await editarAlumno({ 
@@ -280,7 +258,6 @@ router.put("/alumno/:lu", verificarTokenMiddleware, requireRole('administrador')
         });
 
     } catch (err: any) {
-        // Si ejecuta esto el error se produjo en obtenerDatosAlumnoPorLU() o editarAlumno()
         const mensaje = err?.message ?? String(err);
         if (mensaje === ERRORES.LU_DUPLICADA) {
             return res.status(400).json({ error: mensaje });
@@ -291,7 +268,6 @@ router.put("/alumno/:lu", verificarTokenMiddleware, requireRole('administrador')
         if (mensaje === ERRORES.FALLA_AL_CONSULTAR_BD || mensaje === ERRORES.FALLA_AL_CARGAR_DATOS) {
             return res.status(500).json({ error: mensaje });
         }
-        // Otro error inesperado
         return res.status(500).json({ error: ERRORES.INTERNO });
     }
 });

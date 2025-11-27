@@ -21,17 +21,35 @@ async function obtenerHistoria() {
     }
 }
 
-function llenarTabla(cursadas: any[]) {
+async function llenarTabla(cursadas: any[]) {
     const tbody = document.querySelector("#tablaHistoria tbody")!;
     tbody.innerHTML = "";
 
-    cursadas.forEach(c => {
+    const cursadasConDatos = await Promise.all(
+        cursadas.map(async cur => {
+            const res = await fetch(
+                `/api/v0/crud/aida.materias/materia/${encodeURIComponent(cur.MateriaId)}`,
+                { headers: getAuthHeaders() }
+            );
+
+            if (!res.ok) throw new Error("Error obteniendo materia");
+
+            const materia = await res.json();
+
+            return {
+                ...cur,
+                nombre: materia[0].Nombre,
+            };
+        })
+    );
+
+    cursadasConDatos.forEach(c => {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-            <td>${c.MateriaId}</td>
-            <td>${c.Cuatrimestre}</td>
-            <td>${c.FechaInscripcion}</td>
+            <td>${c.nombre}</td>
+            <td>${(c.Cuatrimestre as any).split('T')[0]}</td>
+            <td>${(c.FechaInscripcion as any).split('T')[0]}</td>
             <td>${c.NotaFinal ?? "-"}</td>
         `;
 

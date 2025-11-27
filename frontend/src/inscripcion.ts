@@ -23,8 +23,8 @@ type Cursada = {
 type Inscripcion = {
     MateriaId: number;
     Cuatrimestre: number;
-    nombre?: string;
-    descripcion?: string;
+    Nombre?: string;
+    Descripcion?: string;
 };
 
 /* ---------------------------
@@ -101,12 +101,13 @@ function renderInscripciones() {
     listaInscriptoEl.innerHTML = "";
     inscripciones.forEach(i => {
         const li = document.createElement("li");
-        li.textContent = i.nombre ?? `Materia ${i.MateriaId} - ${i.Cuatrimestre}`;
+        li.textContent = i.Nombre ?? `Materia ${i.MateriaId} - ${(i.Cuatrimestre as any).split('T')[0]}`;
         li.setAttribute("data-materiaid", String(i.MateriaId));
         li.setAttribute("data-cuatrimestre", String(i.Cuatrimestre));
         li.addEventListener("click", async () => {
             // al seleccionar una inscripcion, mostramos los detalles de esa cursada
             const materiaId = Number(li.getAttribute("data-materiaid"));
+            materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
             const cuatrimestre = Number(li.getAttribute("data-cuatrimestre"));
             await mostrarCursadaPorMateriaYCuatri(materiaId, cuatrimestre);
         });
@@ -129,7 +130,7 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
 
     // Construir HTML con los campos más relevantes (puede extenderse)
     const htmlLines: string[] = [];
-    htmlLines.push(`<p><strong>Cuatrimestre:</strong> ${c.Cuatrimestre}</p>`);
+    htmlLines.push(`<p><strong>Cuatrimestre:</strong> ${(c.Cuatrimestre as any).split('T')[0]}</p>`);
     if (c.Profesor) htmlLines.push(`<p><strong>Profesor:</strong> ${c.Profesor}</p>`);
     
     infoCursadaEl.innerHTML = htmlLines.join("\n");
@@ -216,16 +217,10 @@ async function onClickMateria(materiaId: number) {
 }
 
 async function mostrarCursadaPorMateriaYCuatri(materiaId: number, cuatrimestre: number, cursadaYaCargada?: Cursada | null) {
-    // Si ya tenemos la cursada pasada por parámetro y coincide, la usamos
     let cursada = cursadaYaCargada ?? null;
     if (!cursada && cuatrimestre !== -1) {
-        // Si cuatrimestre es -1 -> no hay cursada
-        // Si desdeInscripcion pedimos mostrar la cursada específica del inscripto, el endpoint puede no existir
-        // Para simplicidad, si desdeInscripcion usamos la misma información que vino en inscripciones
         cursada = await obtenerCursadaMasRecienteAPI(materiaId);
     }
-
-    // Mostrar
     mostrarCursadaEnCentro(cursada, materiaSeleccionada?.Nombre);
 }
 

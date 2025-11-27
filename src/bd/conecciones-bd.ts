@@ -1,4 +1,3 @@
-// conecciones-bd.ts
 import dotenv from 'dotenv';
 dotenv.config()
 dotenv.config({
@@ -8,11 +7,8 @@ dotenv.config({
 });
 import { Pool, PoolConfig } from 'pg';
 
-// ------------------ CONFIGURACIÓN ------------------
-
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Config base (dinámico por env)
 const baseConfig: PoolConfig = {
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
@@ -21,17 +17,13 @@ const baseConfig: PoolConfig = {
     idleTimeoutMillis: 30000,
     ssl: isProduction
         ? { rejectUnauthorized: false }
-        : undefined, // en local → sin SSL
+        : undefined,
 };
-
-// ------------------ POOLS ------------------
 
 let adminPool: Pool | null = null;
 let loginPool: Pool | null = null;
 let ownerPool: Pool | null = null;
 let alumnoPool: Pool | null = null;
-
-// ------------------ FUNCIONES DE CONEXIÓN ------------------
 
 export async function getAdminPool(): Promise<Pool> {
     if (!adminPool) {
@@ -77,7 +69,6 @@ export async function getAlumnoPool(): Promise<Pool> {
     return alumnoPool;
 }
 
-// Función Selectora por Rol
 export async function obtenerPoolPorRol(rol?: string): Promise<Pool> {
     switch (rol) {
         case 'administrador':
