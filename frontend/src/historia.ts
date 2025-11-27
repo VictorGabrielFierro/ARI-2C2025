@@ -30,8 +30,8 @@ function llenarTabla(cursadas: any[]) {
 
         tr.innerHTML = `
             <td>${c.MateriaId}</td>
-            <td>${c.Cuatrimestre}</td>
-            <td>${c.FechaInscripcion}</td>
+            <td>${(c.Cuatrimestre as any).split('T')[0]}</td>
+            <td>${(c.FechaInscripcion as any).split('T')[0]}</td>
             <td>${c.NotaFinal ?? "-"}</td>
         `;
 

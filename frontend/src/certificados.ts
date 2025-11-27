@@ -1,3 +1,6 @@
+import { getAuthHeaders, checkToken } from "./authCheck.js";
+checkToken();
+
 const API_BASE = "/api/v0";
 
 async function obtenerToken() {
@@ -27,16 +30,43 @@ async function cargarCertificados() {
     }
 }
 
-function llenarTabla(certificados: { archivo: string, lu: string }[]) {
+async function llenarTabla(certificados: { archivo: string, lu: string }[]) {
     const tbody = document.querySelector("#tablaCertificados tbody")!;
     tbody.innerHTML = "";
 
-    certificados.forEach(cert => {
+    certificados.forEach(c => {
+        c.lu = c.lu.replace(/-/g, "/");
+    });
+
+
+    const certificadosConDatos = await Promise.all(
+    certificados.map(async cert => {
+        const res = await fetch(
+            `/api/v0/crud/aida.alumnos/alumno/${encodeURIComponent(cert.lu)}`,
+            { headers: getAuthHeaders() }
+        );
+
+        if (!res.ok) throw new Error("Error obteniendo alumno");
+
+        const alumno = await res.json();
+
+        return {
+            ...cert,
+            nombre: alumno[0].nombres,
+            apellido: alumno[0].apellido
+        };
+    })
+);
+
+
+    certificadosConDatos.forEach(cert => {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
             <td>${cert.lu}</td>
             <td>${cert.archivo}</td>
+            <td>${cert.nombre}</td>
+            <td>${cert.apellido}</td>
             <td><button class="descargar" data-file="${cert.archivo}">Descargar</button></td>
         `;
 
