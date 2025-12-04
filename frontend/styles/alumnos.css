@@ -152,3 +152,17 @@ form button:hover {
 .btn-eliminar-fila:hover {
     background-color: #c0392b;
 }
+
+.btn-editar-fila {
+    background-color: #f1c40f;
+    color: black;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-right: 5px;
+}
+.btn-editar-fila:hover {
+    background-color: #d4ac0d;
+}

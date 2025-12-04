@@ -160,10 +160,19 @@ function generarFormEditar() {
         
         const textoLabel = esPK ? `${col.name} (Identificador)` : `Nuevo ${col.name}`;
 
-        div.innerHTML = `
-            <label>${textoLabel}</label>
-            <input id="editar_${col.name}" type="${tipoInput(col.type)}">
-        `;
+        // Si es PK → input readonly (bloqueado)
+        if (esPK) {
+            div.innerHTML = `
+                <label>${textoLabel}</label>
+                <input id="editar_${col.name}" type="text" readonly style="background:#eee;">
+            `;
+        } else {
+            div.innerHTML = `
+                <label>${textoLabel}</label>
+                <input id="editar_${col.name}" type="${tipoInput(col.type)}">
+            `;
+        }
+
         form.appendChild(div);
     });
 
@@ -240,9 +249,13 @@ async function cargarRegistros() {
 
             const tdAcciones = document.createElement("td");
             tdAcciones.innerHTML = `
+                <button class="btn-editar-fila">Editar</button>
                 <button class="btn-eliminar-fila">Eliminar</button>
             `;
-            tdAcciones.querySelector("button")!.addEventListener("click", () => {
+            tdAcciones.querySelector(".btn-editar-fila")!.addEventListener("click", () => {
+                editarFilaDesdeBoton(row);
+            });
+            tdAcciones.querySelector(".btn-eliminar-fila")!.addEventListener("click", () => {
                 eliminarFilaDesdeBoton(row);
             });
 
@@ -393,7 +406,7 @@ export async function eliminarRegistro(e: Event) {
     }
 }
 
-// Función para 
+// Función para elimnar registros de la tabla desde las filas mismas con un boton
 async function eliminarFilaDesdeBoton(row: any) {
 
     // Confirmación
@@ -426,6 +439,33 @@ async function eliminarFilaDesdeBoton(row: any) {
         alert("Error: " + err.message);
     }
 }
+
+// funcion para que al tocar el boton de editar desde una fila aparezca el menu para editar, precargado con la informacion correcta
+function editarFilaDesdeBoton(row: any) {
+
+    // Abrir modal editar
+    abrirModal("modalEditar");
+
+    // Para cada columna, completar el input correspondiente
+    columnas.forEach(col => {
+        const input = document.getElementById(`editar_${col.name}`) as HTMLInputElement;
+
+        if (!input) return;
+
+        // Si es PK → no editable
+        const esPK = pk.some(p => p.pk === col.name);
+        if (esPK) {
+            input.value = row[col.name];
+            input.readOnly = true; 
+            input.style.backgroundColor = "#eee"; 
+        } else {
+            input.value = row[col.name] ?? "";
+            input.readOnly = false;
+            input.style.backgroundColor = "white";
+        }
+    });
+}
+
 
 
 
