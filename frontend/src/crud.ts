@@ -95,6 +95,11 @@ function generarTablaHTML() {
         th.textContent = col.name;
         thead.appendChild(th);
     });
+
+    // Agrego una columna para las acciones 
+    const thAcciones = document.createElement("th");
+    thAcciones.textContent = "Acciones";
+    thead.appendChild(thAcciones);
 }
 
 // ----------------------------------------------------------
@@ -232,6 +237,16 @@ async function cargarRegistros() {
                 td.textContent = (col.type == 'date') ? formatFecha(row[col.name]) : (row[col.name] ?? "-");
                 tr.appendChild(td);
             });
+
+            const tdAcciones = document.createElement("td");
+            tdAcciones.innerHTML = `
+                <button class="btn-eliminar-fila">Eliminar</button>
+            `;
+            tdAcciones.querySelector("button")!.addEventListener("click", () => {
+                eliminarFilaDesdeBoton(row);
+            });
+
+            tr.appendChild(tdAcciones);
 
             tbody.appendChild(tr);
         });
@@ -377,6 +392,41 @@ export async function eliminarRegistro(e: Event) {
         mensaje.textContent = err.message;
     }
 }
+
+// Función para 
+async function eliminarFilaDesdeBoton(row: any) {
+
+    // Confirmación
+    if (!confirm("¿Seguro que deseas eliminar este registro?")) return;
+
+    // Construir ID compuesto igual que en eliminarRegistro()
+    const dataPK: any = {};
+
+    pk.forEach(p => {
+        dataPK[p.pk] = row[p.pk];
+    });
+
+    const idUrl = pk
+        .map(col => encodeURIComponent(dataPK[col.pk]))
+        .join("__");
+
+    try {
+        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Error al eliminar");
+
+        alert("Registro eliminado correctamente.");
+        cargarRegistros();
+
+    } catch (err: any) {
+        alert("Error: " + err.message);
+    }
+}
+
 
 
 function inicializarSelectorTablas() {
