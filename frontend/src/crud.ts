@@ -5,9 +5,8 @@ checkToken();
 interface ColMetadata {
     name: string;
     type: string;
-    nullable: boolean;
+    pretty_name: string;
     identity: boolean;
-    editable: boolean;
 }
 
 function formatFecha(fecha?: string | null): string {
@@ -92,7 +91,7 @@ function generarTablaHTML() {
 
     columnas.forEach(col => {
         const th = document.createElement("th");
-        th.textContent = col.name;
+        th.textContent = col.pretty_name;
         thead.appendChild(th);
     });
 

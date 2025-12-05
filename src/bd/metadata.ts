@@ -1,54 +1,81 @@
-import { Pool } from "pg";
-import { getAdminPool } from "./conecciones-bd.js";
+// Metadata de las tablas
+// La idea es tenerlo definido unicamente acá y que frente a modificaciones, solo se tenga que modificar acá
+const metadatos_tablas = [
+    {
+        table: 'aida.alumnos',
+        pk: [ { pk: 'lu' } ],
+        columns: [
+            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false },
+            { name: 'apellido', type: 'character varying', pretty_name: 'Apellido', identity: false },
+            { name: 'nombres', type: 'character varying', pretty_name: 'Nombre', identity: false },
+            { name: 'titulo', type: 'character varying', pretty_name: 'Título', identity: false },
+            { name: 'titulo_en_tramite', type: 'date', pretty_name: 'Fecha de trámite del título', identity: false },
+            { name: 'egreso', type: 'date', pretty_name: 'Fecha de egreso', identity: false }
+        ],
+    },
+    {
+        table: 'aida.materias',
+        pk: [ { pk: 'MateriaId' } ],
+        columns: [
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de la materia', identity: false },
+            { name: 'Nombre', type: 'character varying', pretty_name: 'Nombre de la materia', identity: false },
+            { name: 'Descripcion', type: 'character varying', pretty_name: 'Descripción de la materia', identity: false }
+        ]
+    },
+    {
+        table: 'aida.carreras',
+        pk: [ { pk: 'CarreraId' } ],
+        columns: [
+            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false },
+            { name: 'Nombre', type: 'character varying', pretty_name: 'Nombre de la carrera', identity: false }
+        ]
+    },
+    {
+        table: 'aida.correlativas',
+        pk: [ { pk: 'MateriaId' }, { pk: 'MateriaCorrelativaId' } ],
+        columns: [
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
+            { name: 'MateriaCorrelativaId', type: 'integer', pretty_name: 'Identificador de la materia correlativa', identity: false }
+        ]
+    },
+    {
+        table: 'aida.cursadas',
+        pk: [ { pk: 'MateriaId' }, { pk: 'Cuatrimestre' } ],
+        columns: [
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
+            { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
+            { name: 'Profesor', type: 'character varying', pretty_name: 'Profesor de la cursada', identity: false }
+        ]
+    },
+    {
+        table: 'aida.cursa',
+        pk: [ { pk: 'lu' }, { pk: 'MateriaId' }, { pk: 'Cuatrimestre' } ],
+        columns: [
+            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false },
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
+            { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
+            { name: 'FechaInscripcion', type: 'date', pretty_name: 'Fecha de inscripción', identity: false },
+            { name: 'NotaFinal', type: 'integer', pretty_name: 'Nota final de la cursada', identity: false }
+        ]
+    },
+    {
+        table: 'aida.estudiante_de',
+        pk: [ { pk: 'lu' }, { pk: 'CarreraId' } ],
+        columns: [
+            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false },
+            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false }
+        ]
+    },
+    {
+        table: 'aida.plan_de_estudios',
+        pk: [ { pk: 'CarreraId' }, { pk: 'MateriaId' } ],
+        columns: [
+            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false },
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false }
+        ]
+    }
+]
 
 export async function obtenerMetadataTabla(nombreTabla: string) {
-    const pool: Pool = await getAdminPool();
-
-    const parts = nombreTabla.split('.');
-    const schemaName = parts.length > 1 ? parts[0] : 'public';
-    const tableName = parts.length > 1 ? parts[1] : parts[0];
-
-    const columnasQuery = `
-        SELECT
-            c.column_name AS nombre,
-            c.data_type AS tipo,
-            CASE WHEN c.is_nullable = 'YES' THEN TRUE ELSE FALSE END AS nullable,
-            -- Verifica si la columna tiene una secuencia asociada (típico de SERIAL/IDENTITY en PG)
-            a.attidentity = 'a' OR a.attidentity = 'd' AS identity_column
-        FROM information_schema.columns c
-        JOIN pg_catalog.pg_class t ON t.relname = $2
-        JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace AND n.nspname = $1
-        JOIN pg_catalog.pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
-        WHERE c.table_schema = $1 AND c.table_name = $2
-        ORDER BY c.ordinal_position;
-    `;
-
-    const pkQuery = `
-        SELECT kcu.column_name AS pk
-        FROM information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-        WHERE tc.constraint_type = 'PRIMARY KEY'
-          AND tc.table_schema = $1
-          AND tc.table_name = $2
-        ORDER BY kcu.ordinal_position;
-    `;
-
-    const [columnasRes, pkRes] = await Promise.all([
-        pool.query(columnasQuery, [schemaName, tableName]), 
-        pool.query(pkQuery, [schemaName, tableName])
-    ]);
-
-    const columnas = columnasRes.rows.map((col: any) => ({
-        name: col.nombre,
-        type: col.tipo,
-        nullable: col.nullable, 
-        identity: col.identity_column,
-        editable: !col.identity_column 
-    }));
-
-    const pk = pkRes.rows.map((row: any) => ({ pk: row.pk }));
-
-    return { table: nombreTabla, pk, columns: columnas };
+    return metadatos_tablas.find(t => t.table === nombreTabla)
 }
