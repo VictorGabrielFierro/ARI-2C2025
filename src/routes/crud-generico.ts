@@ -4,8 +4,9 @@ import { obtenerMetadataTabla } from "../bd/metadata.js";
 import { obtenerPoolPorRol } from "../bd/conecciones-bd.js"; 
 import { Pool } from "pg"; 
 import {
-    buildSelectAllQuery,
-    buildSelectBaseQuery, 
+    //buildSelectAllQuery,
+    buildSelectBaseQuery,
+    buildSelectWithJoins,
     buildInsertQuery,
     buildUpdateQuery,
     buildDeleteQuery
@@ -62,9 +63,9 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
 
         const meta = await obtenerMetadataTabla(tabla);
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
-        const pkNames = meta.pk.map(p => p.pk);
+        //const pkNames = meta.pk.map(p => p.pk);
         
-        const query = buildSelectAllQuery(tabla, pkNames);
+        const query = buildSelectWithJoins(tabla, meta);
         const result = await pool.query(query); 
 
         return res.json(result.rows);

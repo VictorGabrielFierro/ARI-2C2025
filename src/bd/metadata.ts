@@ -34,15 +34,33 @@ const metadatos_tablas = [
         table: 'aida.correlativas',
         pk: [ { pk: 'MateriaId' }, { pk: 'MateriaCorrelativaId' } ],
         columns: [
-            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
-            { name: 'MateriaCorrelativaId', type: 'integer', pretty_name: 'Identificador de la materia correlativa', identity: false }
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false, 
+                references: {
+                table: 'aida.materias',
+                column: 'MateriaId',
+                display_column: 'Nombre'
+                } 
+            },
+            { name: 'MateriaCorrelativaId', type: 'integer', pretty_name: 'Identificador de la materia correlativa', identity: false, 
+                references: {
+                table: 'aida.materias',
+                column: 'MateriaId',
+                display_column: 'Nombre'
+                } 
+            }
         ]
     },
     {
         table: 'aida.cursadas',
         pk: [ { pk: 'MateriaId' }, { pk: 'Cuatrimestre' } ],
         columns: [
-            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false, 
+                references: {
+                table: 'aida.materias',
+                column: 'MateriaId',
+                display_column: 'Nombre'
+                } 
+            },
             { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
             { name: 'Profesor', type: 'character varying', pretty_name: 'Profesor de la cursada', identity: false }
         ]
@@ -51,8 +69,20 @@ const metadatos_tablas = [
         table: 'aida.cursa',
         pk: [ { pk: 'lu' }, { pk: 'MateriaId' }, { pk: 'Cuatrimestre' } ],
         columns: [
-            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false },
-            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false },
+            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false, 
+                references: {
+                table: 'aida.alumnos',
+                column: 'lu',
+                display_column: 'apellido'
+                }
+            },
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false, 
+                references: {
+                table: 'aida.materias',
+                column: 'MateriaId',
+                display_column: 'Nombre'
+                }
+            },
             { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
             { name: 'FechaInscripcion', type: 'date', pretty_name: 'Fecha de inscripción', identity: false },
             { name: 'NotaFinal', type: 'integer', pretty_name: 'Nota final de la cursada', identity: false }
@@ -62,16 +92,40 @@ const metadatos_tablas = [
         table: 'aida.estudiante_de',
         pk: [ { pk: 'lu' }, { pk: 'CarreraId' } ],
         columns: [
-            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false },
-            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false }
+            { name: 'lu', type: 'character varying', pretty_name: 'Libreta Universitaria', identity: false,
+                references: {
+                table: 'aida.alumnos',
+                column: 'lu',
+                display_column: 'apellido'
+                }
+            },
+            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false,
+                references: {
+                table: 'aida.carreras',
+                column: 'CarreraId',
+                display_column: 'Nombre'
+                }
+            }
         ]
     },
     {
         table: 'aida.plan_de_estudios',
         pk: [ { pk: 'CarreraId' }, { pk: 'MateriaId' } ],
         columns: [
-            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false },
-            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false }
+            { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false,
+                references: {
+                table: 'aida.carreras',
+                column: 'CarreraId',
+                display_column: 'Nombre'
+                }
+            },
+            { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false,
+                references: {
+                table: 'aida.materias',
+                column: 'MateriaId',
+                display_column: 'Nombre'
+                }
+            }
         ]
     }
 ]

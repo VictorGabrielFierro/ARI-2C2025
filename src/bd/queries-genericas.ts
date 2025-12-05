@@ -16,6 +16,34 @@ export function buildSelectAllQuery(tabla: string, pkCols: string[]) {
     return `${base} ORDER BY ${orderBy} ASC`; 
 }
 
+export function buildSelectWithJoins(tabla: string, metadata: any) {
+    const alias = "t";
+
+    let selectCols = [`${alias}.*`];
+    let joins: string[] = [];
+
+    metadata.columns.forEach((col: any) => {
+        if (col.references) {
+            const refAlias = col.name + "_ref";
+
+            joins.push(
+                `LEFT JOIN ${w(col.references.table)} ${refAlias}
+                 ON ${alias}.${w(col.name)} = ${refAlias}.${w(col.references.column)}`
+            );
+
+            selectCols.push(
+                `${refAlias}.${w(col.references.display_column)} AS "${col.name}_display"`
+            );
+        }
+    });
+
+    return `
+        SELECT ${selectCols.join(",\n               ")}
+        FROM ${w(tabla)} ${alias}
+        ${joins.join("\n")}
+        ORDER BY ${metadata.pk.map((p: any) => `${alias}.${w(p.pk)}`).join(", ")}
+    `;
+}
 
 export function buildInsertQuery(tabla: string, cols: string[]) {
     const columnas = cols.map(c => w(c)).join(", ");

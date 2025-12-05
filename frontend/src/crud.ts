@@ -1,4 +1,3 @@
-import { IRecordSet} from "mssql";
 import { checkToken, getAuthHeaders } from "./authCheck.js";
 checkToken();
 
@@ -7,6 +6,11 @@ interface ColMetadata {
     type: string;
     pretty_name: string;
     identity: boolean;
+    references?: {
+        table: string;
+        column: string;
+        display_column: string;
+    };
 }
 
 function formatFecha(fecha?: string | null): string {
@@ -41,8 +45,9 @@ const tabla = getParam("tabla");           // ej: "materias"
 const singular = getParam("singular");     // ej: "materia"
 const plural = getParam("plural");         // ej: "materias"
 
-let pk: IRecordSet<any>;
+let pk: {pk: string}[];
 let columnas: ColMetadata[] = [];
+let columnasDisplay: string[] = [];
 
 // ----------------------------------------------------------
 // MODALES
@@ -75,6 +80,11 @@ async function cargarMetadata() {
     const data = await res.json();
     pk = data.pk;
     columnas = data.columns;
+    // Columnas que son foreign keys y necesitan mostrar __display
+    columnasDisplay = columnas
+        .filter(c => c.references)            // solo FK
+        .map(c => c.name + "_display");       // nombre esperado del backend
+
 
     generarTablaHTML();
     generarFormCrear();
@@ -92,6 +102,13 @@ function generarTablaHTML() {
     columnas.forEach(col => {
         const th = document.createElement("th");
         th.textContent = col.pretty_name;
+        thead.appendChild(th);
+    });
+
+    // columnas display derivadas de metadata.references
+    columnasDisplay.forEach((cd: string) => {
+        const th = document.createElement("th");
+        th.textContent = cd.replace("_display", " (detalle)");
         thead.appendChild(th);
     });
 
@@ -243,6 +260,12 @@ async function cargarRegistros() {
             columnas.forEach(col => {
                 const td = document.createElement("td");
                 td.textContent = (col.type == 'date') ? formatFecha(row[col.name]) : (row[col.name] ?? "-");
+                tr.appendChild(td);
+            });
+
+            columnasDisplay.forEach(cd => {
+                const td = document.createElement("td");
+                td.textContent = row[cd] ?? "-";
                 tr.appendChild(td);
             });
 
