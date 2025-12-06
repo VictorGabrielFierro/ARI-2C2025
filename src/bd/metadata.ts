@@ -38,14 +38,16 @@ const metadatos_tablas = [
                 references: {
                 table: 'aida.materias',
                 column: 'MateriaId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la materia'
                 } 
             },
             { name: 'MateriaCorrelativaId', type: 'integer', pretty_name: 'Identificador de la materia correlativa', identity: false, 
                 references: {
                 table: 'aida.materias',
                 column: 'MateriaId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la materia correlativa'
                 } 
             }
         ]
@@ -58,7 +60,8 @@ const metadatos_tablas = [
                 references: {
                 table: 'aida.materias',
                 column: 'MateriaId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la materia'
                 } 
             },
             { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
@@ -73,14 +76,16 @@ const metadatos_tablas = [
                 references: {
                 table: 'aida.alumnos',
                 column: 'lu',
-                display_column: 'apellido'
+                display_column: 'apellido',
+                pretty_name: 'Apellido del alumno'
                 }
             },
             { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false, 
                 references: {
                 table: 'aida.materias',
                 column: 'MateriaId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la materia que cursó'
                 }
             },
             { name: 'Cuatrimestre', type: 'date', pretty_name: 'Fecha de inicio del cuatrimestre', identity: false },
@@ -96,14 +101,16 @@ const metadatos_tablas = [
                 references: {
                 table: 'aida.alumnos',
                 column: 'lu',
-                display_column: 'apellido'
+                display_column: 'apellido',
+                pretty_name: 'Apellido del estudiante'
                 }
             },
             { name: 'CarreraId', type: 'integer', pretty_name: 'Identificador de la carrera', identity: false,
                 references: {
                 table: 'aida.carreras',
                 column: 'CarreraId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la carrera'
                 }
             }
         ]
@@ -116,14 +123,16 @@ const metadatos_tablas = [
                 references: {
                 table: 'aida.carreras',
                 column: 'CarreraId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la carrera'
                 }
             },
             { name: 'MateriaId', type: 'integer', pretty_name: 'Identificador de materia', identity: false,
                 references: {
                 table: 'aida.materias',
                 column: 'MateriaId',
-                display_column: 'Nombre'
+                display_column: 'Nombre',
+                pretty_name: 'Nombre de la materia'
                 }
             }
         ]
