@@ -1,13 +1,17 @@
-import { IRecordSet} from "mssql";
 import { checkToken, getAuthHeaders } from "./authCheck.js";
 checkToken();
 
 interface ColMetadata {
     name: string;
     type: string;
-    nullable: boolean;
+    pretty_name: string;
     identity: boolean;
-    editable: boolean;
+    references?: {
+        table: string;
+        column: string;
+        display_column: string;
+        pretty_name: string;
+    };
 }
 
 function formatFecha(fecha?: string | null): string {
@@ -42,7 +46,7 @@ const tabla = getParam("tabla");           // ej: "materias"
 const singular = getParam("singular");     // ej: "materia"
 const plural = getParam("plural");         // ej: "materias"
 
-let pk: IRecordSet<any>;
+let pk: {pk: string}[];
 let columnas: ColMetadata[] = [];
 
 // ----------------------------------------------------------
@@ -77,6 +81,7 @@ async function cargarMetadata() {
     pk = data.pk;
     columnas = data.columns;
 
+
     generarTablaHTML();
     generarFormCrear();
     generarFormEditar();
@@ -92,9 +97,27 @@ function generarTablaHTML() {
 
     columnas.forEach(col => {
         const th = document.createElement("th");
-        th.textContent = col.name;
+        th.textContent = col.pretty_name;
         thead.appendChild(th);
+
+        if (col.references){
+            const thExtra = document.createElement("th")
+            thExtra.textContent = col.references.pretty_name;
+            thead.appendChild(thExtra)
+        }
     });
+
+    // // columnas display derivadas de metadata.references
+    // columnasDisplay.forEach((cd: string) => {
+    //     const th = document.createElement("th");
+    //     th.textContent = cd.replace("_display", " (detalle)");
+    //     thead.appendChild(th);
+    // });
+
+    // Agrego una columna para las acciones 
+    const thAcciones = document.createElement("th");
+    thAcciones.textContent = "Acciones";
+    thead.appendChild(thAcciones);
 }
 
 // ----------------------------------------------------------
@@ -155,10 +178,19 @@ function generarFormEditar() {
         
         const textoLabel = esPK ? `${col.name} (Identificador)` : `Nuevo ${col.name}`;
 
-        div.innerHTML = `
-            <label>${textoLabel}</label>
-            <input id="editar_${col.name}" type="${tipoInput(col.type)}">
-        `;
+        // Si es PK → input readonly (bloqueado)
+        if (esPK) {
+            div.innerHTML = `
+                <label>${textoLabel}</label>
+                <input id="editar_${col.name}" type="text" readonly style="background:#eee;">
+            `;
+        } else {
+            div.innerHTML = `
+                <label>${textoLabel}</label>
+                <input id="editar_${col.name}" type="${tipoInput(col.type)}">
+            `;
+        }
+
         form.appendChild(div);
     });
 
@@ -231,7 +263,27 @@ async function cargarRegistros() {
                 const td = document.createElement("td");
                 td.textContent = (col.type == 'date') ? formatFecha(row[col.name]) : (row[col.name] ?? "-");
                 tr.appendChild(td);
+
+                if (col.references){
+                    const tdExtra = document.createElement("td");
+                    tdExtra.textContent = row[col.name + '_display'] ?? "-";
+                    tr.appendChild(tdExtra);
+                }
             });
+
+            const tdAcciones = document.createElement("td");
+            tdAcciones.innerHTML = `
+                <button class="btn-editar-fila">Editar</button>
+                <button class="btn-eliminar-fila">Eliminar</button>
+            `;
+            tdAcciones.querySelector(".btn-editar-fila")!.addEventListener("click", () => {
+                editarFilaDesdeBoton(row);
+            });
+            tdAcciones.querySelector(".btn-eliminar-fila")!.addEventListener("click", () => {
+                eliminarFilaDesdeBoton(row);
+            });
+
+            tr.appendChild(tdAcciones);
 
             tbody.appendChild(tr);
         });
@@ -377,6 +429,68 @@ export async function eliminarRegistro(e: Event) {
         mensaje.textContent = err.message;
     }
 }
+
+// Función para elimnar registros de la tabla desde las filas mismas con un boton
+async function eliminarFilaDesdeBoton(row: any) {
+
+    // Confirmación
+    if (!confirm("¿Seguro que deseas eliminar este registro?")) return;
+
+    // Construir ID compuesto igual que en eliminarRegistro()
+    const dataPK: any = {};
+
+    pk.forEach(p => {
+        dataPK[p.pk] = row[p.pk];
+    });
+
+    const idUrl = pk
+        .map(col => encodeURIComponent(dataPK[col.pk]))
+        .join("__");
+
+    try {
+        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Error al eliminar");
+
+        alert("Registro eliminado correctamente.");
+        cargarRegistros();
+
+    } catch (err: any) {
+        alert("Error: " + err.message);
+    }
+}
+
+// funcion para que al tocar el boton de editar desde una fila aparezca el menu para editar, precargado con la informacion correcta
+function editarFilaDesdeBoton(row: any) {
+
+    // Abrir modal editar
+    abrirModal("modalEditar");
+
+    // Para cada columna, completar el input correspondiente
+    columnas.forEach(col => {
+        const input = document.getElementById(`editar_${col.name}`) as HTMLInputElement;
+
+        if (!input) return;
+
+        // Si es PK → no editable
+        const esPK = pk.some(p => p.pk === col.name);
+        if (esPK) {
+            input.value = row[col.name];
+            input.readOnly = true; 
+            input.style.backgroundColor = "#eee"; 
+        } else {
+            input.value = row[col.name] ?? "";
+            input.readOnly = false;
+            input.style.backgroundColor = "white";
+        }
+    });
+}
+
+
 
 
 function inicializarSelectorTablas() {

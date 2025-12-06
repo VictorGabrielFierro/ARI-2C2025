@@ -4,8 +4,9 @@ import { obtenerMetadataTabla } from "../bd/metadata.js";
 import { obtenerPoolPorRol } from "../bd/conecciones-bd.js"; 
 import { Pool } from "pg"; 
 import {
-    buildSelectAllQuery,
-    buildSelectBaseQuery, 
+    //buildSelectAllQuery,
+    buildSelectBaseQuery,
+    buildSelectWithJoins,
     buildInsertQuery,
     buildUpdateQuery,
     buildDeleteQuery
@@ -61,9 +62,10 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
         if (!tabla) return res.status(400).json({ error: "Falta el nombre de la tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
-        const pkNames = meta.pk.map(p => p.pk);
+        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
+        //const pkNames = meta.pk.map(p => p.pk);
         
-        const query = buildSelectAllQuery(tabla, pkNames);
+        const query = buildSelectWithJoins(tabla, meta);
         const result = await pool.query(query); 
 
         return res.json(result.rows);
@@ -88,6 +90,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
+        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pkInfo = meta.pk;
 
         if (!idParts) {
@@ -126,6 +129,7 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administ
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
+        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
 
         const columnasInsertables = meta.columns
             .filter(c => !c.identity)
@@ -168,6 +172,7 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
+        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pkNames = meta.pk.map(p => p.pk); 
 
         const columnasAActualizar = meta.columns
@@ -231,6 +236,7 @@ router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('admi
         if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
         const meta = await obtenerMetadataTabla(tabla);
+        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pk = meta.pk;
 
         if (!idParts || idParts.length !== pk.length) {
