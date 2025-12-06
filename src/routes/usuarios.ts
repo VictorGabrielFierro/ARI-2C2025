@@ -1,12 +1,12 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { getLoginPool } from '../bd/conecciones-bd.js';
+import { obtenerPoolPorRol } from '../bd/conecciones-bd.js';
 import { Pool, QueryResult } from 'pg'; 
 import { autenticarUsuario } from '../auth.js';
 import JWT_SECRET from "../auth.js";
 
-const pool: Pool = await getLoginPool(); 
+const pool: Pool = await obtenerPoolPorRol(); 
 const router = Router();
 
 
@@ -97,5 +97,13 @@ router.post("/login", async (req, res) => {
         return res.status(500).json({ error: "Error al iniciar sesión" });
     }
 });
+
+router.post("/logout", (_, res) => {
+    // Borrar cookie
+    res.clearCookie("token", { path: "/" });
+
+    return res.json({ message: "Logout exitoso" });
+});
+
 
 export default router;

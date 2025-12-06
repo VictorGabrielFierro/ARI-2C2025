@@ -20,62 +20,38 @@ let loginPool: Pool | null = null;
 let ownerPool: Pool | null = null;
 let alumnoPool: Pool | null = null;
 
-export async function getAdminPool(): Promise<Pool> {
-    if (!adminPool) {
-        adminPool = new Pool({
-            ...baseConfig,
-            user: process.env.ADMIN_USER,
-            password: process.env.ADMIN_PASS,
-        });
-    }
-    return adminPool;
-}
-
-export async function getLoginPool(): Promise<Pool> {
-    if (!loginPool) {
-        loginPool = new Pool({
-            ...baseConfig,
-            user: process.env.LOGIN_USER,
-            password: process.env.LOGIN_PASS,
-        });
-    }
-    return loginPool;
-}
-
-export async function getOwnerPool(): Promise<Pool> {
-    if (!ownerPool) {
-        ownerPool = new Pool({
-            ...baseConfig,
-            user: process.env.OWNER_USER,
-            password: process.env.OWNER_PASS,
-        });
-    }
-    return ownerPool;
-}
-
-export async function getAlumnoPool(): Promise<Pool> {
-    if (!alumnoPool) {
-        alumnoPool = new Pool({
-            ...baseConfig,
-            user: process.env.ALUMNO_USER,
-            password: process.env.ALUMNO_PASS,
-        });
-    }
-    return alumnoPool;
+async function obtenerPool(usuario: string | undefined, clave: string | undefined){
+    return new Pool({
+        ...baseConfig,
+        user: usuario,
+        password: clave
+    })
 }
 
 export async function obtenerPoolPorRol(rol?: string): Promise<Pool> {
     switch (rol) {
         case 'administrador':
-            return getAdminPool();
+            if (!adminPool){
+                adminPool = await obtenerPool(process.env.ADMIN_USER, process.env.ADMIN_PASS);
+            }
+            return adminPool
 
         case 'owner':
-            return getOwnerPool();
+            if (!ownerPool){
+                ownerPool = await obtenerPool(process.env.OWNER_USER, process.env.OWNER_PASS);
+            }
+            return ownerPool
 
         case 'usuario':
-            return getAlumnoPool();
+            if (!alumnoPool){
+                alumnoPool = await obtenerPool(process.env.ALUMNO_USER, process.env.ALUMNO_PASS);
+            }
+            return alumnoPool
 
         default:
-            return getLoginPool();
+            if(!loginPool){
+                loginPool = await obtenerPool(process.env.LOGIN_USER, process.env.LOGIN_PASS)
+            }
+            return loginPool
     }
 }

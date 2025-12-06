@@ -2,9 +2,9 @@ import { Pool, PoolClient, QueryResult } from 'pg';
 import fs from 'fs/promises';
 import { Alumno } from "../tipos/index.js";
 import { ERRORES } from '../constantes/errores.js';
-import { getAdminPool } from './conecciones-bd.js';
+import { obtenerPoolPorRol } from './conecciones-bd.js';
 
-const pool: Pool = await getAdminPool(); 
+const pool: Pool = await obtenerPoolPorRol('administrador'); 
 
 export async function cargarCSV(ruta: string){
     let client: PoolClient | null = null;

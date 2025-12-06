@@ -1,11 +1,11 @@
 import { Pool, QueryResult } from "pg"; 
-import { getAlumnoPool } from "./conecciones-bd.js";
+import { obtenerPoolPorRol } from "./conecciones-bd.js";
 
 
 // Esta funcion obtiene las materias pertenecientes al plan de estudios del alumno
 // y que tiene las correlativas aprobadas
 export async function obtenerMateriasInscribibles(lu: string) {
-    const pool: Pool = await getAlumnoPool();
+    const pool: Pool = await obtenerPoolPorRol('usuario');
 
     const query = `
         SELECT m."MateriaId", m."Nombre", m."Descripcion"
@@ -32,7 +32,7 @@ export async function obtenerMateriasInscribibles(lu: string) {
 }
 
 export async function obtenerCursadaMasReciente(materiaId: number) {
-    const pool: Pool = await getAlumnoPool();
+    const pool: Pool = await obtenerPoolPorRol('usuario');
 
     const query = `
         -- 6. ⬇️ En PostgreSQL, reemplazamos 'SELECT TOP 1 *' por 'SELECT * ... LIMIT 1'
@@ -48,7 +48,7 @@ export async function obtenerCursadaMasReciente(materiaId: number) {
 }
 
 export async function obtenerInscripcionesAlumno(lu: string) {
-    const pool: Pool = await getAlumnoPool();
+    const pool: Pool = await obtenerPoolPorRol('usuario');
 
     const query = `
         SELECT 
