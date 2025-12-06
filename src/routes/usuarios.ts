@@ -1,12 +1,12 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { getLoginPool } from '../bd/conecciones-bd.js';
+import { obtenerPoolPorRol } from '../bd/conecciones-bd.js';
 import { Pool, QueryResult } from 'pg'; 
 import { autenticarUsuario } from '../auth.js';
 import JWT_SECRET from "../auth.js";
 
-const pool: Pool = await getLoginPool(); 
+const pool: Pool = await obtenerPoolPorRol(); 
 const router = Router();
 
 

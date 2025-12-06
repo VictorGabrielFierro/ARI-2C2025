@@ -1,8 +1,8 @@
 import { Pool } from 'pg'; 
 import { ERRORES } from "../constantes/errores.js";
-import { getAdminPool } from './conecciones-bd.js';
+import { obtenerPoolPorRol } from './conecciones-bd.js';
 
-const pool: Pool = await getAdminPool(); 
+const pool: Pool = await obtenerPoolPorRol('administrador'); 
 
 export async function obtenerDatosAlumnoPorFecha(fecha: string) {
     try {

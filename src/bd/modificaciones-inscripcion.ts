@@ -1,8 +1,8 @@
 import { Pool, QueryResult } from "pg";
-import { getAlumnoPool } from "./conecciones-bd.js";
+import { obtenerPoolPorRol } from "./conecciones-bd.js";
 
 export async function inscribirAlumno(lu: string, materiaId: number, cuatrimestre: number) {
-    const pool: Pool = await getAlumnoPool();
+    const pool: Pool = await obtenerPoolPorRol('usuario');
     const checkQuery = `
         SELECT 1 
         FROM "aida"."cursa"
@@ -25,7 +25,7 @@ export async function inscribirAlumno(lu: string, materiaId: number, cuatrimestr
 }
 
 export async function desinscribirAlumno(lu: string, materiaId: number, cuatrimestre: number) {
-    const pool: Pool = await getAlumnoPool();
+    const pool: Pool = await obtenerPoolPorRol('usuario');
 
     const deleteQuery = `
         DELETE FROM "aida"."cursa"
