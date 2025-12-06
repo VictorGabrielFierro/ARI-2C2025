@@ -98,4 +98,12 @@ router.post("/login", async (req, res) => {
     }
 });
 
+router.post("/logout", (_, res) => {
+    // Borrar cookie
+    res.clearCookie("token", { path: "/" });
+
+    return res.json({ message: "Logout exitoso" });
+});
+
+
 export default router;
