@@ -85,7 +85,6 @@ async function cargarMetadata() {
     generarTablaHTML();
     generarFormCrear();
     generarFormEditar();
-    generarFormEliminar();
 }
 
 // ----------------------------------------------------------
@@ -199,34 +198,6 @@ function generarFormEditar() {
     form.appendChild(btn);
 
     form.addEventListener("submit", editarRegistro);
-}
-
-// ----------------------------------------------------------
-// GENERAR FORMULARIO DE ELIMINAR
-// ----------------------------------------------------------
-function generarFormEliminar() {
-    const form = document.getElementById("formEliminar") as HTMLFormElement;
-    form.innerHTML = "";
-
-    // FILTRO: Solo procesamos las columnas que son PK
-    const columnasPK = columnas.filter(col => pk.some(p => p.pk === col.name));
-
-    columnasPK.forEach(col => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-            <label>${col.name}</label>
-            <input id="eliminar_${col.name}" type="${tipoInput(col.type)}">
-        `;
-        // Nota: Le puse 'readonly' y un color rojizo porque 
-        // generalmente uno no "escribe" el ID a borrar, sino que lo selecciona de la tabla.
-        form.appendChild(div);
-    });
-
-    const btn = document.createElement("button");
-    btn.textContent = "Eliminar";
-    form.appendChild(btn);
-
-    form.addEventListener("submit", eliminarRegistro);
 }
 
 // ----------------------------------------------------------
@@ -379,57 +350,6 @@ async function editarRegistro(e: Event) {
     }
 }
 
-// ----------------------------------------------------------
-// ELIMINAR REGISTRO
-// ----------------------------------------------------------
-export async function eliminarRegistro(e: Event) {
-    e.preventDefault();
-    const mensaje = document.getElementById("mensajeModalEliminar")!;
-    const data: any = {};
-
-    // 1. SOLUCIÓN DEL ERROR:
-    // Solo intentamos leer los inputs que realmente existen en el formulario (las PKs).
-    // Si intentamos leer una columna normal (ej: 'nombre'), el input no existe y daba error.
-    
-    // Filtramos solo las columnas que son PK
-    const columnasPK = columnas.filter(col => pk.some(p => p.pk === col.name));
-
-    columnasPK.forEach(col => {
-        const input = document.getElementById(`eliminar_${col.name}`) as HTMLInputElement;
-        if (input) {
-            data[col.name] = input.value;
-        }
-    });
-
-    // 2. Construimos el ID para la URL
-    const idUrl = pk
-        .map(col => encodeURIComponent(data[col.pk])) 
-        .join("__");
-
-    try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
-            method: "DELETE",
-            headers: getAuthHeaders()
-        });
-
-        const json = await res.json();
-
-        if (!res.ok) throw new Error(json.error || "Error al eliminar");
-
-        mensaje.style.color = "green";
-        mensaje.textContent = json.mensaje;
-
-        cargarRegistros();
-        
-        // Opcional: Limpiar mensaje después de unos segundos
-        setTimeout(() => { mensaje.textContent = ""; }, 3000);
-
-    } catch (err: any) {
-        mensaje.style.color = "red";
-        mensaje.textContent = err.message;
-    }
-}
-
 // Función para elimnar registros de la tabla desde las filas mismas con un boton
 async function eliminarFilaDesdeBoton(row: any) {
 
@@ -523,7 +443,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     (document.getElementById("tituloCrud") as HTMLElement).textContent = `CRUD de ${tabla}`;
     (document.getElementById("tituloCrear") as HTMLElement).textContent = `Crear ${singular}`;
     (document.getElementById("tituloEditar") as HTMLElement).textContent = `Editar ${singular}`;
-    (document.getElementById("tituloEliminar") as HTMLElement).textContent = `Eliminar ${singular}`;
 
     await cargarMetadata();
     await cargarRegistros();
@@ -532,4 +451,3 @@ window.addEventListener("DOMContentLoaded", async () => {
 // Exponer funciones globalmente
 (window as any).abrirModal = abrirModal;
 (window as any).cerrarModal = cerrarModal;
-(window as any).eliminarRegistro = eliminarRegistro;
