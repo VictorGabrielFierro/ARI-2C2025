@@ -20,7 +20,7 @@ export async function obtenerMateriasInscribibles(lu: string) {
             AND NOT EXISTS (
                     SELECT 1
                     FROM "aida"."cursa" cur
-                    WHERE cur.lu = $1 -- ⚠️ Usamos $1 nuevamente ya que es el único parámetro
+                    WHERE cur.lu = $1 -- Usamos $1 nuevamente ya que es el único parámetro
                     AND cur."MateriaId" = cor."MateriaCorrelativaId"
                     AND cur."NotaFinal" >= 4
                 )
@@ -31,15 +31,15 @@ export async function obtenerMateriasInscribibles(lu: string) {
     return result.rows;
 }
 
-export async function obtenerCursadaMasReciente(materiaId: number) {
+export async function obtenerCursadaMasReciente(materiaId: string) {
     const pool: Pool = await obtenerPoolPorRol('usuario');
 
     const query = `
-        -- 6. ⬇️ En PostgreSQL, reemplazamos 'SELECT TOP 1 *' por 'SELECT * ... LIMIT 1'
+        -- 6. En PostgreSQL, reemplazamos 'SELECT TOP 1 *' por 'SELECT * ... LIMIT 1'
         SELECT *
         FROM "aida"."cursadas"
         WHERE "MateriaId" = $1
-        ORDER BY "Cuatrimestre" DESC
+        ORDER BY "Año" DESC, "Cuatrimestre" DESC
         LIMIT 1;
     `;
 
@@ -53,6 +53,7 @@ export async function obtenerInscripcionesAlumno(lu: string) {
     const query = `
         SELECT 
             c."MateriaId",
+            c."Año",
             c."Cuatrimestre",
             m."Nombre",
             m."Descripcion"

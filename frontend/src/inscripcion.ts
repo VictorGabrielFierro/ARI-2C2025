@@ -5,23 +5,21 @@ checkToken();
    Tipos (Igual que antes)
    --------------------------- */
 type Materia = {
-    MateriaId: number;
+    MateriaId: string;
     Nombre: string;
     Descripcion?: string | null;
 };
 
 type Cursada = {
-    MateriaId: number;
+    MateriaId: string;
+    Año: number;
     Cuatrimestre: number;
     Profesor?: string | null;
-    Aula?: string | null;
-    Horario?: string | null;
-    Cupos?: number | null;
-    [k: string]: any;
 };
 
 type Inscripcion = {
-    MateriaId: number;
+    MateriaId: string;
+    Año: number;
     Cuatrimestre: number;
     Nombre?: string;
     Descripcion?: string;
@@ -77,7 +75,7 @@ function limpiarSeleccion() {
     lis.forEach(li => li.classList.remove("selected"));
 }
 
-function marcarMateriaEnLista(materiaId: number) {
+function marcarMateriaEnLista(materiaId: string) {
     limpiarSeleccion();
     const li = listaMateriasEl.querySelector<HTMLLIElement>(`li[data-id="${materiaId}"]`);
     if (li) li.classList.add("selected");
@@ -101,15 +99,15 @@ function renderInscripciones() {
     listaInscriptoEl.innerHTML = "";
     inscripciones.forEach(i => {
         const li = document.createElement("li");
-        li.textContent = i.Nombre ?? `Materia ${i.MateriaId} - ${(i.Cuatrimestre as any).split('T')[0]}`;
+        li.textContent = i.Nombre ?? `Materia ${i.MateriaId} - ${(i.Año)} - ${(i.Cuatrimestre)}`;
         li.setAttribute("data-materiaid", String(i.MateriaId));
+        li.setAttribute("data-año", String(i.Año));
         li.setAttribute("data-cuatrimestre", String(i.Cuatrimestre));
         li.addEventListener("click", async () => {
             // al seleccionar una inscripcion, mostramos los detalles de esa cursada
-            const materiaId = Number(li.getAttribute("data-materiaid"));
+            const materiaId = String(li.getAttribute("data-materiaid"));
             materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
-            const cuatrimestre = Number(li.getAttribute("data-cuatrimestre"));
-            await mostrarCursadaPorMateriaYCuatri(materiaId, cuatrimestre);
+            await mostrarCursadaPorMateriaYCuatri(materiaId);
         });
         listaInscriptoEl.appendChild(li);
     });
@@ -130,13 +128,14 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
 
     // Construir HTML con los campos más relevantes (puede extenderse)
     const htmlLines: string[] = [];
-    htmlLines.push(`<p><strong>Cuatrimestre:</strong> ${(c.Cuatrimestre as any).split('T')[0]}</p>`);
+    htmlLines.push(`<p><strong>Año:</strong> ${(c.Año)}</p>`);
+    htmlLines.push(`<p><strong>Cuatrimestre:</strong> ${(c.Cuatrimestre)}</p>`);
     if (c.Profesor) htmlLines.push(`<p><strong>Profesor:</strong> ${c.Profesor}</p>`);
     
     infoCursadaEl.innerHTML = htmlLines.join("\n");
 
     // Determinar si el usuario está inscripto a esta materia-cuatrimestre
-    if (isInscripto(c.MateriaId, c.Cuatrimestre)) {
+    if (isInscripto(c.MateriaId, c.Año, c.Cuatrimestre)) {
         btnAccion.textContent = "Desinscribirse";
         btnAccion.dataset.action = "desinscribir";
         btnAccion.style.display = "inline-block";
@@ -152,8 +151,8 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
 /* ---------------------------
    Helpers de negocio
    --------------------------- */
-function isInscripto(materiaId: number, cuatrimestre: number) {
-    return inscripciones.some(i => i.MateriaId === materiaId && i.Cuatrimestre === cuatrimestre);
+function isInscripto(materiaId: string, año: number, cuatrimestre: number) {
+    return inscripciones.some(i => i.MateriaId == materiaId && i.Año == año && i.Cuatrimestre == cuatrimestre);
 }
 
 /* ---------------------------
@@ -186,7 +185,7 @@ async function cargarInscripcionesDesdeAPI() {
     }
 }
 
-async function obtenerCursadaMasRecienteAPI(materiaId: number): Promise<Cursada | null> {
+async function obtenerCursadaMasRecienteAPI(materiaId: string): Promise<Cursada | null> {
     try {
         const res = await fetch(`/api/v0/cursadas/ultima/${materiaId}`, { headers: getAuthHeaders() });
         if (!res.ok) {
@@ -205,7 +204,7 @@ async function obtenerCursadaMasRecienteAPI(materiaId: number): Promise<Cursada 
    Acciones usuario
    --------------------------- */
 
-async function onClickMateria(materiaId: number) {
+async function onClickMateria(materiaId: string) {
     mostrarMensajeEstado("", "neutro");
     materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
     if (!materiaSeleccionada) return;
@@ -213,12 +212,12 @@ async function onClickMateria(materiaId: number) {
     marcarMateriaEnLista(materiaId);
     // Cargar la cursada mas reciente para esa materia
     const c = await obtenerCursadaMasRecienteAPI(materiaId);
-    await mostrarCursadaPorMateriaYCuatri(materiaId, c?.Cuatrimestre ?? -1, c);
+    await mostrarCursadaPorMateriaYCuatri(materiaId, c);
 }
 
-async function mostrarCursadaPorMateriaYCuatri(materiaId: number, cuatrimestre: number, cursadaYaCargada?: Cursada | null) {
+async function mostrarCursadaPorMateriaYCuatri(materiaId: string, cursadaYaCargada?: Cursada | null) {
     let cursada = cursadaYaCargada ?? null;
-    if (!cursada && cuatrimestre !== -1) {
+    if (!cursada) {
         cursada = await obtenerCursadaMasRecienteAPI(materiaId);
     }
     mostrarCursadaEnCentro(cursada, materiaSeleccionada?.Nombre);
@@ -239,6 +238,7 @@ async function inscribir() {
     try {
         const body = {
             materiaId: cursadaSeleccionada.MateriaId,
+            año: cursadaSeleccionada.Año,
             cuatrimestre: cursadaSeleccionada.Cuatrimestre
         };
 
@@ -284,6 +284,7 @@ async function desinscribir() {
     try {
         const body = {
             materiaId: cursadaSeleccionada.MateriaId,
+            año: cursadaSeleccionada.Año,
             cuatrimestre: cursadaSeleccionada.Cuatrimestre
         };
 

@@ -29,11 +29,7 @@ router.get("/materias", verificarTokenMiddleware, async (req: Request, res: Resp
 // Obtener la cursada más reciente de X materia
 router.get("/cursadas/ultima/:materiaId", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const materiaId = Number(req.params.materiaId);
-
-        if (isNaN(materiaId)) {
-            return res.status(400).json({ error: "ID de materia inválido" });
-        }
+        const materiaId = String(req.params.materiaId);
 
         const cursada = await obtenerCursadaMasReciente(materiaId);
 
@@ -76,7 +72,7 @@ router.get("/cursa", verificarTokenMiddleware, async (req: Request, res: Respons
 // Inscribir alumno
 router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const {materiaId, cuatrimestre } = req.body;
+        const {materiaId, año, cuatrimestre } = req.body;
         const lu = req.user?.lu;
 
         if (!lu || !materiaId || !cuatrimestre) {
@@ -88,7 +84,7 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
             return res.status(403).json({ error: 'Acceso denegado' });
         }
 
-        await inscribirAlumno(lu, materiaId, cuatrimestre);
+        await inscribirAlumno(lu, materiaId, año, cuatrimestre);
         return res.status(201).json({ mensaje: "Inscripción exitosa" });
 
     } catch (err: any) {
@@ -105,7 +101,7 @@ router.post("/cursa", verificarTokenMiddleware, async (req: Request, res: Respon
 // Desinscribir alumno
 router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Response) => {
     try {
-        const {materiaId, cuatrimestre } = req.body;
+        const {materiaId, año, cuatrimestre } = req.body;
         const lu = req.user?.lu;
 
         if (!lu || !materiaId || !cuatrimestre) {
@@ -117,7 +113,7 @@ router.delete("/cursa", verificarTokenMiddleware, async (req: Request, res: Resp
             return res.status(403).json({ error: 'Acceso denegado' });
         }
 
-        await desinscribirAlumno(lu, materiaId, cuatrimestre);
+        await desinscribirAlumno(lu, materiaId, año, cuatrimestre);
         return res.json({ mensaje: "Desinscripción exitosa" });
 
     } catch (err) {

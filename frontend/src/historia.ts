@@ -47,7 +47,8 @@ async function llenarTabla(cursadas: any[]) {
 
         tr.innerHTML = `
             <td>${c.nombre}</td>
-            <td>${(c.Cuatrimestre as any).split('T')[0]}</td>
+            <td>${(c.Año)}</td>
+            <td>${(c.Cuatrimestre)}</td>
             <td>${(c.FechaInscripcion as any).split('T')[0]}</td>
             <td>${c.NotaFinal ?? "-"}</td>
         `;
