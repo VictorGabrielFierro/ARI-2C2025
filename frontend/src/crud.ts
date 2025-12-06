@@ -48,6 +48,7 @@ const plural = getParam("plural");         // ej: "materias"
 
 let pk: {pk: string}[];
 let columnas: ColMetadata[] = [];
+let pretty_name: string;
 
 // ----------------------------------------------------------
 // MODALES
@@ -80,6 +81,7 @@ async function cargarMetadata() {
     const data = await res.json();
     pk = data.pk;
     columnas = data.columns;
+    pretty_name = data.pretty_name;
 
 
     generarTablaHTML();
@@ -438,12 +440,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    (document.getElementById("tituloCrud") as HTMLElement).textContent = `CRUD de ${tabla}`;
-    (document.getElementById("tituloCrear") as HTMLElement).textContent = `Crear ${singular}`;
-    (document.getElementById("tituloEditar") as HTMLElement).textContent = `Editar ${singular}`;
-
     await cargarMetadata();
     await cargarRegistros();
+
+    (document.getElementById("tituloCrud") as HTMLElement).textContent = `CRUD de ${pretty_name}`;
+    (document.getElementById("tituloCrear") as HTMLElement).textContent = `Crear ${singular}`;
+    (document.getElementById("tituloEditar") as HTMLElement).textContent = `Editar ${singular}`;
 });
 
 // Exponer funciones globalmente
