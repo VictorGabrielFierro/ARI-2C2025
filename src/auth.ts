@@ -1,10 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config()
 import bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 import { Usuario } from "./tipos/index.js";
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
-export const JWT_SECRET = "clave-ultra-secreta";
+export const JWT_SECRET: jwt.Secret = process.env.JWT_SECRET ?? 'No deberia ser undefined';
 
 export async function verificarPassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);

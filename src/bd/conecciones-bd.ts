@@ -1,10 +1,5 @@
 import dotenv from 'dotenv';
 dotenv.config()
-dotenv.config({
-  path: process.env.ENV_FILE === '.env.production'
-    ? '.env.production'
-    : '.env.development'
-});
 import { Pool, PoolConfig } from 'pg';
 
 const isProduction = process.env.NODE_ENV === 'production';
