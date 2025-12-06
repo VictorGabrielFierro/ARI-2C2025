@@ -12,6 +12,7 @@ const metadatos_tablas = [
             { name: 'titulo_en_tramite', type: 'date', pretty_name: 'Fecha de trámite del título', identity: false },
             { name: 'egreso', type: 'date', pretty_name: 'Fecha de egreso', identity: false }
         ],
+        pretty_name: 'Alumnos'
     },
     {
         table: 'aida.materias',
@@ -20,7 +21,8 @@ const metadatos_tablas = [
             { name: 'MateriaId', type: 'character varying', pretty_name: 'Identificador de la materia', identity: false },
             { name: 'Nombre', type: 'character varying', pretty_name: 'Nombre de la materia', identity: false },
             { name: 'Descripcion', type: 'character varying', pretty_name: 'Descripción de la materia', identity: false }
-        ]
+        ],
+        pretty_name: 'Materias'
     },
     {
         table: 'aida.carreras',
@@ -28,7 +30,8 @@ const metadatos_tablas = [
         columns: [
             { name: 'CarreraId', type: 'character varying', pretty_name: 'Identificador de la carrera', identity: false },
             { name: 'Nombre', type: 'character varying', pretty_name: 'Nombre de la carrera', identity: false }
-        ]
+        ],
+        pretty_name: 'Carreras'
     },
     {
         table: 'aida.correlativas',
@@ -50,7 +53,8 @@ const metadatos_tablas = [
                 pretty_name: 'Nombre de la materia correlativa'
                 } 
             }
-        ]
+        ],
+        pretty_name: 'Correlatividades'
     },
     {
         table: 'aida.cursadas',
@@ -67,7 +71,8 @@ const metadatos_tablas = [
             { name: 'Año', type: 'integer', pretty_name: 'Año', identity: false },
             { name: 'Cuatrimestre', type: 'integer', pretty_name: 'Cuatrimestre', identity: false },
             { name: 'Profesor', type: 'character varying', pretty_name: 'Profesor de la cursada', identity: false }
-        ]
+        ],
+        pretty_name: 'Cursadas de las materias'
     },
     {
         table: 'aida.cursa',
@@ -93,7 +98,8 @@ const metadatos_tablas = [
             { name: 'Cuatrimestre', type: 'integer', pretty_name: 'Cuatrimestre', identity: false },
             { name: 'FechaInscripcion', type: 'date', pretty_name: 'Fecha de inscripción', identity: false },
             { name: 'NotaFinal', type: 'integer', pretty_name: 'Nota final de la cursada', identity: false }
-        ]
+        ],
+        pretty_name: 'Cursadas de los estudiantes'
     },
     {
         table: 'aida.estudiante_de',
@@ -115,7 +121,8 @@ const metadatos_tablas = [
                 pretty_name: 'Nombre de la carrera'
                 }
             }
-        ]
+        ],
+        pretty_name: 'Carreras de estudiantes'
     },
     {
         table: 'aida.plan_de_estudios',
@@ -137,7 +144,8 @@ const metadatos_tablas = [
                 pretty_name: 'Nombre de la materia'
                 }
             }
-        ]
+        ],
+        pretty_name: 'Planes de estudio'
     }
 ]
 
