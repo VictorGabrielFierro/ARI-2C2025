@@ -43,15 +43,3 @@ export async function obtenerDatosAlumnoPorLU(lu: string) {
         throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
     }
 }
-
-export async function obtenerTablaAlumnos() {
-    try {
-        const tablaAlumnos = await pool.query(
-            `SELECT * FROM "aida"."alumnos"` 
-        );
-        
-        return tablaAlumnos.rows;
-    } catch (error:any) {
-        throw new Error(ERRORES.FALLA_AL_CONSULTAR_BD);
-    }
-}
