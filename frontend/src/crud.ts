@@ -352,11 +352,9 @@ async function editarRegistro(e: Event) {
 
 // Función para elimnar registros de la tabla desde las filas mismas con un boton
 async function eliminarFilaDesdeBoton(row: any) {
-
-    // Confirmación
     if (!confirm("¿Seguro que deseas eliminar este registro?")) return;
 
-    // Construir ID compuesto igual que en eliminarRegistro()
+    // Construir ID compuesto
     const dataPK: any = {};
 
     pk.forEach(p => {
@@ -374,7 +372,7 @@ async function eliminarFilaDesdeBoton(row: any) {
         });
 
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Error al eliminar");
+        if (!res.ok) throw new Error((json.code == 23503) ? `No se puede eliminar ya que la tabla ${json.tableWithError} referencia esta entrada` : json.error || "Error al eliminar");
 
         alert("Registro eliminado correctamente.");
         cargarRegistros();

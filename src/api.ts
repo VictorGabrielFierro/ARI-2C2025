@@ -29,11 +29,6 @@ app.use("/api/v0/crud", crudGenerico);
 app.use("/api/v0", inscripcionRouter);
 app.use("/api/v0", certificadosRouter);
 
-
-app.get("/api/v0/usuarios/validar-token", verificarTokenMiddleware, (_req, res) => {
-    res.json({ ok: true, mensaje: "Token válido" });
-});
-
 app.get('/menuAdministrador.html', verificarTokenMiddleware, requireRole('administrador'), (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/pages/menuAdministrador.html'));
 });
