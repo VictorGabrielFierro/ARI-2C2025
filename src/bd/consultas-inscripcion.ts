@@ -24,7 +24,19 @@ export async function obtenerMateriasInscribibles(lu: string) {
                     AND cur."MateriaId" = cor."MateriaCorrelativaId"
                     AND cur."NotaFinal" >= 4
                 )
-        );
+        )   EXCEPT (
+                    SELECT 
+                        c."MateriaId",
+                        m."Nombre",
+                        m."Descripcion"
+                    FROM "aida"."cursa" c
+                    INNER JOIN "aida"."materias" m ON m."MateriaId" = c."MateriaId"
+                    WHERE c.lu = $1 AND c."Cuatrimestre" = (
+                        SELECT MAX("cur"."Cuatrimestre")
+                        FROM "aida"."cursadas" cur
+                    )
+                    ORDER BY m."Nombre" ASC
+            )
     `;
 
     const result: QueryResult = await pool.query(query, [lu]);

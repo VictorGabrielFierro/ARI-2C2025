@@ -99,14 +99,14 @@ function renderInscripciones() {
     listaInscriptoEl.innerHTML = "";
     inscripciones.forEach(i => {
         const li = document.createElement("li");
-        li.textContent = i.Nombre ?? `Materia ${i.MateriaId} - ${(i.Año)} - ${(i.Cuatrimestre)}`;
-        li.setAttribute("data-materiaid", String(i.MateriaId));
+        li.textContent = i.Nombre ?? '';
+        li.setAttribute("data-id", String(i.MateriaId));
         li.setAttribute("data-año", String(i.Año));
         li.setAttribute("data-cuatrimestre", String(i.Cuatrimestre));
         li.addEventListener("click", async () => {
             // al seleccionar una inscripcion, mostramos los detalles de esa cursada
-            const materiaId = String(li.getAttribute("data-materiaid"));
-            materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
+            const materiaId = String(li.getAttribute("data-id"));
+            materiaSeleccionada = (inscripciones.find(i => i.MateriaId === materiaId)) as Materia ?? null;
             await mostrarCursadaPorMateriaYCuatri(materiaId);
         });
         listaInscriptoEl.appendChild(li);
@@ -122,7 +122,6 @@ function mostrarCursadaEnCentro(c: Cursada | null, nombreMateria?: string) {
         cursadaSeleccionada = null;
         return;
     }
-
     cursadaSeleccionada = c;
     tituloMateriaEl.textContent = nombreMateria ?? `Materia ${c.MateriaId}`;
 
@@ -206,7 +205,8 @@ async function obtenerCursadaMasRecienteAPI(materiaId: string): Promise<Cursada 
 
 async function onClickMateria(materiaId: string) {
     mostrarMensajeEstado("", "neutro");
-    materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? null;
+    materiaSeleccionada = materias.find(m => m.MateriaId === materiaId) ?? (inscripciones.find(i => i.MateriaId === materiaId)) as Materia ?? null;
+
     if (!materiaSeleccionada) return;
 
     marcarMateriaEnLista(materiaId);
@@ -258,6 +258,7 @@ async function inscribir() {
         }
 
         // Recargar datos
+        await cargarMateriasDesdeAPI();
         await cargarInscripcionesDesdeAPI();
         
         // Refrescar vista
@@ -303,6 +304,7 @@ async function desinscribir() {
             throw new Error(data?.error || "Error al desinscribir");
         }
 
+        await cargarMateriasDesdeAPI();
         await cargarInscripcionesDesdeAPI();
         
         mostrarCursadaEnCentro(cursadaSeleccionada, materiaSeleccionada?.Nombre);
