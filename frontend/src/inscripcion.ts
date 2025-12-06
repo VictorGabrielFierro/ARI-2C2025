@@ -35,6 +35,7 @@ const infoCursadaEl = document.getElementById("infoCursada") as HTMLDivElement;
 const btnAccion = document.getElementById("btnAccion") as HTMLButtonElement;
 
 const mensajeAccionEl = document.getElementById("mensajeAccion") as HTMLElement;
+let timeoutId: number | null = null;
 
 /* ---------------------------
    Estado (Igual que antes)
@@ -55,6 +56,10 @@ function obtenerToken(): string | null {
 function mostrarMensajeEstado(mensaje: string, tipo: 'exito' | 'error' | 'neutro') {
     if (!mensajeAccionEl) return;
     
+    if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+    }
+
     mensajeAccionEl.textContent = mensaje;
     
     if (tipo === 'exito') {
@@ -64,6 +69,11 @@ function mostrarMensajeEstado(mensaje: string, tipo: 'exito' | 'error' | 'neutro
     } else {
         mensajeAccionEl.style.color = 'black';
     }
+
+    timeoutId = window.setTimeout(() => {
+        mensajeAccionEl.textContent = "";
+        timeoutId = null;
+    }, 2000);
 }
 
 /* ---------------------------
