@@ -29,7 +29,7 @@ BEGIN
 END
 $do$;
 
-GRANT USAGE ON SCHEMA aida TO aida.alumno;
+GRANT USAGE ON SCHEMA aida TO aida_alumno;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.cursa TO aida_alumno;
 GRANT SELECT, INSERT, UPDATE, DELETE ON aida.estudiante_de TO aida_alumno;
