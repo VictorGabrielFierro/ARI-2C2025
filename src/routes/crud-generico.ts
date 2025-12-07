@@ -261,7 +261,9 @@ router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('admi
         return res.json({ mensaje: "Registro eliminado" });
     } catch (err) {
         console.error("Error en DELETE:", err);
-        return res.status(500).json({ error: "Error al eliminar registro" });
+        return res.status(500).json({ error: "Error al eliminar registro", 
+            code: Number((err as any).code), 
+            tableWithError: String((err as any).table)});
     }
 });
 
