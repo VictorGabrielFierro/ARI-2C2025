@@ -1,0 +1,1 @@
+CREATE DATABASE aida_db OWNER aida_owner;

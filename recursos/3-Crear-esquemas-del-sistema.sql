@@ -1,17 +1,3 @@
--- Ejecutar primero esto separado
-DO
-$do$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'aida_owner') THEN
-        CREATE ROLE aida_owner WITH LOGIN PASSWORD 'Owner2025';
-    END IF;
-END
-$do$;
-
--- luego ejecutar esta linea
-CREATE DATABASE aida_db OWNER aida_owner;
-
--- luego ejecutar todo lo demas
 CREATE SCHEMA IF NOT EXISTS aida AUTHORIZATION aida_owner;
 
 -- Crear tabla alumnos
