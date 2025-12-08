@@ -41,7 +41,7 @@ async function llenarTabla(certificados: { archivo: string, lu: string }[]) {
     const certificadosConDatos = await Promise.all(
         certificados.map(async cert => {
             const res = await fetch(
-                `/api/v0/crud/aida.alumnos/alumno/${encodeURIComponent(cert.lu)}`,
+                `/api/v0/crud/aida.alumnos/${encodeURIComponent(cert.lu)}`,
                 { headers: getAuthHeaders() }
             );
 

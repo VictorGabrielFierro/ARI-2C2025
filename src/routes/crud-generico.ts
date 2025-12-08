@@ -52,7 +52,7 @@ async function egresarAlumnoAutomaticamente(lu: string, pool: Pool) {
 
 
 // Obtener la tabla entera
-router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
+router.get("/:tabla", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const userRole = req.user?.rol;
@@ -76,7 +76,7 @@ router.get("/:tabla/:plural", verificarTokenMiddleware, requireRole('administrad
 });
 
 // Obtener resultados filtrados de una tabla
-router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) => {
+router.get("/:tabla/:id", verificarTokenMiddleware, async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const pool = await obtenerPoolPorRol('administrador');
@@ -118,7 +118,7 @@ router.get("/:tabla/:singular/:id", verificarTokenMiddleware, async (req, res) =
 });
 
 // Insertar un valor en la tabla
-router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
+router.post("/:tabla", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const userRole = req.user?.rol;
@@ -159,7 +159,7 @@ router.post("/:tabla/:singular", verificarTokenMiddleware, requireRole('administ
 });
 
 // Actualizamos una entrada
-router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
+router.put("/:tabla/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const userRole = req.user?.rol;
@@ -224,7 +224,7 @@ router.put("/:tabla/:singular/:id", verificarTokenMiddleware, requireRole('admin
 
 
 // Eliminar una entrada
-router.delete("/:tabla/:plural/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
+router.delete("/:tabla/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
         const tabla = req.params.tabla;
         const idParts = req.params.id?.split('__').map(decodeURIComponent);

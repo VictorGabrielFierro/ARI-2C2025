@@ -42,9 +42,8 @@ function getParam(name: string): string {
     return new URLSearchParams(window.location.search).get(name) || "";
 }
 
-const tabla = getParam("tabla");           // ej: "materias"
-const singular = getParam("singular");     // ej: "materia"
-const plural = getParam("plural");         // ej: "materias"
+const tabla = getParam("tabla");
+const singular = getParam("singular");
 
 let pk: {pk: string}[];
 let columnas: ColMetadata[] = [];
@@ -219,7 +218,7 @@ async function cargarRegistros() {
     const tbody = document.getElementById("tbody")!;
 
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${plural}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}`, {
             headers: getAuthHeaders()
         });
 
@@ -283,7 +282,7 @@ async function crearRegistro(e: Event) {
     });
     const dataLimpia = limpiarObjeto(data);
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${singular}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(dataLimpia)
@@ -332,7 +331,7 @@ async function editarRegistro(e: Event) {
     try {
         // OJO AQUÍ: Quitamos el 'encodeURIComponent' externo que tenías antes.
         // Ya codificamos las partes arriba. Si codificas de nuevo, el '/' se vuelve '%252F' y falla.
-        const res = await fetch(`/api/v0/crud/${tabla}/${singular}/${idUrl}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "PUT",
             headers: getAuthHeaders(),
             body: JSON.stringify(dataLimpia)
@@ -368,7 +367,7 @@ async function eliminarFilaDesdeBoton(row: any) {
         .join("__");
 
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });
@@ -418,13 +417,13 @@ function inicializarSelectorTablas() {
     if (!selector) return;
 
     // Marca la opción correspondiente a la tabla actual
-    selector.value = `${tabla}|${singular}|${plural}`;
+    selector.value = `${tabla}|${singular}`;
 
     // Cuando el usuario selecciona otra tabla, recargar la página
     selector.addEventListener("change", () => {
-        const [nuevaTabla, nuevoSingular, nuevoPlural] = selector.value.split("|");
+        const [nuevaTabla, nuevoSingular] = selector.value.split("|");
 
-        window.location.href = `crud.html?tabla=${nuevaTabla}&singular=${nuevoSingular}&plural=${nuevoPlural}`;
+        window.location.href = `crud.html?tabla=${nuevaTabla}&singular=${nuevoSingular}`;
     });
 }
 
@@ -435,8 +434,8 @@ function inicializarSelectorTablas() {
 window.addEventListener("DOMContentLoaded", async () => {
     inicializarSelectorTablas()
 
-    if (!tabla || !singular || !plural) {
-        alert("Faltan parámetros en la URL (tabla, singular, plural)");
+    if (!tabla || !singular) {
+        alert("Faltan parámetros en la URL (tabla, singular)");
         return;
     }
 
