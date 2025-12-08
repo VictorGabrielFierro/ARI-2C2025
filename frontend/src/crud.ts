@@ -125,7 +125,7 @@ function generarFormCrear() {
         .forEach(col => {
             const div = document.createElement("div");
             div.innerHTML = `
-                <label>${col.name}</label>
+                <label>${col.pretty_name}</label>
                 <input id="crear_${col.name}" type="${tipoInput(col.type)}">
             `;
             form.appendChild(div);
@@ -165,11 +165,7 @@ function generarFormEditar() {
 
         const div = document.createElement("div");
         
-        /// 2. Lógica del Label:
-        //    - Si es PK    -> Muestra "Nombre (Identificador)"
-        //    - Si no es PK -> Muestra "Nuevo Nombre"
-        
-        const textoLabel = esPK ? `${col.name} (Identificador)` : `Nuevo ${col.name}`;
+        const textoLabel = esPK ? `${col.pretty_name} (Identificador)` : col.pretty_name;
 
         // Si es PK → input readonly (bloqueado)
         if (esPK) {
