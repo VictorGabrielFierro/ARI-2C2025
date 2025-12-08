@@ -107,13 +107,6 @@ function generarTablaHTML() {
         }
     });
 
-    // // columnas display derivadas de metadata.references
-    // columnasDisplay.forEach((cd: string) => {
-    //     const th = document.createElement("th");
-    //     th.textContent = cd.replace("_display", " (detalle)");
-    //     thead.appendChild(th);
-    // });
-
     // Agrego una columna para las acciones 
     const thAcciones = document.createElement("th");
     thAcciones.textContent = "Acciones";
@@ -325,16 +318,13 @@ async function editarRegistro(e: Event) {
         .map(col => encodeURIComponent(data[col.pk])) 
         .join("__");
 
-    // 2. Limpiamos el cuerpo (Sacamos los nulls)
-    const dataLimpia = limpiarObjeto(data);
-
     try {
         // OJO AQUÍ: Quitamos el 'encodeURIComponent' externo que tenías antes.
         // Ya codificamos las partes arriba. Si codificas de nuevo, el '/' se vuelve '%252F' y falla.
         const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "PUT",
             headers: getAuthHeaders(),
-            body: JSON.stringify(dataLimpia)
+            body: JSON.stringify(data)
         });
         
         const json = await res.json();
@@ -386,23 +376,33 @@ async function eliminarFilaDesdeBoton(row: any) {
 // funcion para que al tocar el boton de editar desde una fila aparezca el menu para editar, precargado con la informacion correcta
 function editarFilaDesdeBoton(row: any) {
 
-    // Abrir modal editar
     abrirModal("modalEditar");
 
-    // Para cada columna, completar el input correspondiente
     columnas.forEach(col => {
         const input = document.getElementById(`editar_${col.name}`) as HTMLInputElement;
-
         if (!input) return;
 
-        // Si es PK → no editable
         const esPK = pk.some(p => p.pk === col.name);
+
+        let valor = row[col.name];
+
+        if (input.type === "date" && valor) {
+            const d = new Date(valor);
+
+            if (!isNaN(d.getTime())) {
+                // convertir a YYYY-MM-DD
+                valor = d.toISOString().split("T")[0];
+            } else {
+                valor = "";
+            }
+        }
+
+        input.value = valor ?? "";
+
         if (esPK) {
-            input.value = row[col.name];
-            input.readOnly = true; 
-            input.style.backgroundColor = "#eee"; 
+            input.readOnly = true;
+            input.style.backgroundColor = "#eee";
         } else {
-            input.value = row[col.name] ?? "";
             input.readOnly = false;
             input.style.backgroundColor = "white";
         }
