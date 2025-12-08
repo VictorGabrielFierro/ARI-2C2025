@@ -5,7 +5,7 @@ interface ColMetadata {
     name: string;
     type: string;
     pretty_name: string;
-    identity: boolean;
+    nullable: boolean;
     references?: {
         table: string;
         column: string;
@@ -121,11 +121,11 @@ function generarFormCrear() {
     form.innerHTML = "";
 
     columnas
-        .filter(c => !c.identity)
         .forEach(col => {
             const div = document.createElement("div");
+            const label = col.nullable ? col.pretty_name : col.pretty_name + ' (*)'
             div.innerHTML = `
-                <label>${col.pretty_name}</label>
+                <label>${label}</label>
                 <input id="crear_${col.name}" type="${tipoInput(col.type)}">
             `;
             form.appendChild(div);
@@ -165,7 +165,7 @@ function generarFormEditar() {
 
         const div = document.createElement("div");
         
-        const textoLabel = esPK ? `${col.pretty_name} (Identificador)` : col.pretty_name;
+        const textoLabel = esPK ? `${col.pretty_name} (Identificador)` : (col.nullable ? col.pretty_name : col.pretty_name + ' (*)');
 
         // Si es PK → input readonly (bloqueado)
         if (esPK) {
@@ -266,9 +266,17 @@ async function crearRegistro(e: Event) {
 
     const data: any = {};
 
-    columnas.filter(c => !c.identity).forEach(col => {
+    columnas.forEach(col => {
         data[col.name] = (document.getElementById(`crear_${col.name}`) as HTMLInputElement).value || null;
     });
+
+    let faltaCampoObligatorio = columnas.some(col => (!col.nullable && data[col.name] == null))
+    if (faltaCampoObligatorio){
+        mensaje.style.color = "red";
+        mensaje.textContent = "Faltan rellenar campos obligatorios"
+        return
+    }
+
     const dataLimpia = limpiarObjeto(data);
     try {
         const res = await fetch(`/api/v0/crud/${tabla}`, {
@@ -293,7 +301,7 @@ async function crearRegistro(e: Event) {
 }
 
 // ----------------------------------------------------------
-// EDITAR REGISTRO (Corregido)
+// EDITAR REGISTRO
 // ----------------------------------------------------------
 async function editarRegistro(e: Event) {
     e.preventDefault();
@@ -308,15 +316,18 @@ async function editarRegistro(e: Event) {
         data[col.name] = input.value === "" ? null : input.value;
     });
 
-    // 1. Construimos el ID para la URL
-    // Nota: encodeURIComponent AQUÍ es correcto para las PARTES (ej: 1600/17 -> 1600%2F17)
+    let faltaCampoObligatorio = columnas.some(col => (!col.nullable && data[col.name] == null))
+    if (faltaCampoObligatorio){
+        mensaje.style.color = "red";
+        mensaje.textContent = "Faltan rellenar campos obligatorios"
+        return
+    }
+
     const idUrl = pk
         .map(col => encodeURIComponent(data[col.pk])) 
         .join("__");
 
     try {
-        // OJO AQUÍ: Quitamos el 'encodeURIComponent' externo que tenías antes.
-        // Ya codificamos las partes arriba. Si codificas de nuevo, el '/' se vuelve '%252F' y falla.
         const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "PUT",
             headers: getAuthHeaders(),

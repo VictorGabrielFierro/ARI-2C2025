@@ -132,7 +132,6 @@ router.post("/:tabla", verificarTokenMiddleware, requireRole('administrador'), a
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
 
         const columnasInsertables = meta.columns
-            .filter(c => !c.identity)
             .map(c => c.name);
 
         const values: (any)[] = [];
