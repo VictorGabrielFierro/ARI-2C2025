@@ -5,7 +5,7 @@ interface ColMetadata {
     name: string;
     type: string;
     pretty_name: string;
-    identity: boolean;
+    nullable: boolean;
     references?: {
         table: string;
         column: string;
@@ -42,9 +42,8 @@ function getParam(name: string): string {
     return new URLSearchParams(window.location.search).get(name) || "";
 }
 
-const tabla = getParam("tabla");           // ej: "materias"
-const singular = getParam("singular");     // ej: "materia"
-const plural = getParam("plural");         // ej: "materias"
+const tabla = getParam("tabla");
+const singular = getParam("singular");
 
 let pk: {pk: string}[];
 let columnas: ColMetadata[] = [];
@@ -108,13 +107,6 @@ function generarTablaHTML() {
         }
     });
 
-    // // columnas display derivadas de metadata.references
-    // columnasDisplay.forEach((cd: string) => {
-    //     const th = document.createElement("th");
-    //     th.textContent = cd.replace("_display", " (detalle)");
-    //     thead.appendChild(th);
-    // });
-
     // Agrego una columna para las acciones 
     const thAcciones = document.createElement("th");
     thAcciones.textContent = "Acciones";
@@ -129,11 +121,11 @@ function generarFormCrear() {
     form.innerHTML = "";
 
     columnas
-        .filter(c => !c.identity)
         .forEach(col => {
             const div = document.createElement("div");
+            const label = col.nullable ? col.pretty_name : col.pretty_name + ' (*)'
             div.innerHTML = `
-                <label>${col.name}</label>
+                <label>${label}</label>
                 <input id="crear_${col.name}" type="${tipoInput(col.type)}">
             `;
             form.appendChild(div);
@@ -173,11 +165,7 @@ function generarFormEditar() {
 
         const div = document.createElement("div");
         
-        /// 2. Lógica del Label:
-        //    - Si es PK    -> Muestra "Nombre (Identificador)"
-        //    - Si no es PK -> Muestra "Nuevo Nombre"
-        
-        const textoLabel = esPK ? `${col.name} (Identificador)` : `Nuevo ${col.name}`;
+        const textoLabel = esPK ? `${col.pretty_name} (Identificador)` : (col.nullable ? col.pretty_name : col.pretty_name + ' (*)');
 
         // Si es PK → input readonly (bloqueado)
         if (esPK) {
@@ -219,7 +207,7 @@ async function cargarRegistros() {
     const tbody = document.getElementById("tbody")!;
 
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${plural}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}`, {
             headers: getAuthHeaders()
         });
 
@@ -278,12 +266,20 @@ async function crearRegistro(e: Event) {
 
     const data: any = {};
 
-    columnas.filter(c => !c.identity).forEach(col => {
+    columnas.forEach(col => {
         data[col.name] = (document.getElementById(`crear_${col.name}`) as HTMLInputElement).value || null;
     });
+
+    let faltaCampoObligatorio = columnas.some(col => (!col.nullable && data[col.name] == null))
+    if (faltaCampoObligatorio){
+        mensaje.style.color = "red";
+        mensaje.textContent = "Faltan rellenar campos obligatorios"
+        return
+    }
+
     const dataLimpia = limpiarObjeto(data);
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${singular}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: JSON.stringify(dataLimpia)
@@ -305,7 +301,7 @@ async function crearRegistro(e: Event) {
 }
 
 // ----------------------------------------------------------
-// EDITAR REGISTRO (Corregido)
+// EDITAR REGISTRO
 // ----------------------------------------------------------
 async function editarRegistro(e: Event) {
     e.preventDefault();
@@ -320,22 +316,22 @@ async function editarRegistro(e: Event) {
         data[col.name] = input.value === "" ? null : input.value;
     });
 
-    // 1. Construimos el ID para la URL
-    // Nota: encodeURIComponent AQUÍ es correcto para las PARTES (ej: 1600/17 -> 1600%2F17)
+    let faltaCampoObligatorio = columnas.some(col => (!col.nullable && data[col.name] == null))
+    if (faltaCampoObligatorio){
+        mensaje.style.color = "red";
+        mensaje.textContent = "Faltan rellenar campos obligatorios"
+        return
+    }
+
     const idUrl = pk
         .map(col => encodeURIComponent(data[col.pk])) 
         .join("__");
 
-    // 2. Limpiamos el cuerpo (Sacamos los nulls)
-    const dataLimpia = limpiarObjeto(data);
-
     try {
-        // OJO AQUÍ: Quitamos el 'encodeURIComponent' externo que tenías antes.
-        // Ya codificamos las partes arriba. Si codificas de nuevo, el '/' se vuelve '%252F' y falla.
-        const res = await fetch(`/api/v0/crud/${tabla}/${singular}/${idUrl}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "PUT",
             headers: getAuthHeaders(),
-            body: JSON.stringify(dataLimpia)
+            body: JSON.stringify(data)
         });
         
         const json = await res.json();
@@ -368,7 +364,7 @@ async function eliminarFilaDesdeBoton(row: any) {
         .join("__");
 
     try {
-        const res = await fetch(`/api/v0/crud/${tabla}/${plural}/${idUrl}`, {
+        const res = await fetch(`/api/v0/crud/${tabla}/${idUrl}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });
@@ -387,23 +383,33 @@ async function eliminarFilaDesdeBoton(row: any) {
 // funcion para que al tocar el boton de editar desde una fila aparezca el menu para editar, precargado con la informacion correcta
 function editarFilaDesdeBoton(row: any) {
 
-    // Abrir modal editar
     abrirModal("modalEditar");
 
-    // Para cada columna, completar el input correspondiente
     columnas.forEach(col => {
         const input = document.getElementById(`editar_${col.name}`) as HTMLInputElement;
-
         if (!input) return;
 
-        // Si es PK → no editable
         const esPK = pk.some(p => p.pk === col.name);
+
+        let valor = row[col.name];
+
+        if (input.type === "date" && valor) {
+            const d = new Date(valor);
+
+            if (!isNaN(d.getTime())) {
+                // convertir a YYYY-MM-DD
+                valor = d.toISOString().split("T")[0];
+            } else {
+                valor = "";
+            }
+        }
+
+        input.value = valor ?? "";
+
         if (esPK) {
-            input.value = row[col.name];
-            input.readOnly = true; 
-            input.style.backgroundColor = "#eee"; 
+            input.readOnly = true;
+            input.style.backgroundColor = "#eee";
         } else {
-            input.value = row[col.name] ?? "";
             input.readOnly = false;
             input.style.backgroundColor = "white";
         }
@@ -418,13 +424,13 @@ function inicializarSelectorTablas() {
     if (!selector) return;
 
     // Marca la opción correspondiente a la tabla actual
-    selector.value = `${tabla}|${singular}|${plural}`;
+    selector.value = `${tabla}|${singular}`;
 
     // Cuando el usuario selecciona otra tabla, recargar la página
     selector.addEventListener("change", () => {
-        const [nuevaTabla, nuevoSingular, nuevoPlural] = selector.value.split("|");
+        const [nuevaTabla, nuevoSingular] = selector.value.split("|");
 
-        window.location.href = `crud.html?tabla=${nuevaTabla}&singular=${nuevoSingular}&plural=${nuevoPlural}`;
+        window.location.href = `crud.html?tabla=${nuevaTabla}&singular=${nuevoSingular}`;
     });
 }
 
@@ -435,8 +441,8 @@ function inicializarSelectorTablas() {
 window.addEventListener("DOMContentLoaded", async () => {
     inicializarSelectorTablas()
 
-    if (!tabla || !singular || !plural) {
-        alert("Faltan parámetros en la URL (tabla, singular, plural)");
+    if (!tabla || !singular) {
+        alert("Faltan parámetros en la URL (tabla, singular)");
         return;
     }
 

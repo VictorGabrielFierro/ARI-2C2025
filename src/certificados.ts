@@ -7,29 +7,19 @@ import { ERRORES } from "./constantes/errores.js";
 
 
 export async function generarTituloPorFecha(fecha: string, salida: string){
-   try {
-        const resultados: ResultadoTitulo[] = [];
-        const alumnos = await obtenerDatosAlumnoPorFecha(fecha);
-        for (const alumno of alumnos) {
-            const resultadoTitulo = await generarTitulo(alumno, salida)
-            resultados.push(resultadoTitulo)
-        }
-        return resultados
-   } catch (error) {
-        throw error;
-   }
+    const resultados: ResultadoTitulo[] = [];
+    const alumnos = await obtenerDatosAlumnoPorFecha(fecha);
+    for (const alumno of alumnos) {
+        const resultadoTitulo = await generarTitulo(alumno, salida)
+        resultados.push(resultadoTitulo)
+    }
+    return resultados
 }
 
 export async function generarTituloPorLU(LU:string, salida:string) {
-    try {
-        const alumno = await obtenerDatosAlumnoPorLU(LU)
-        const resultados = await generarTitulo(alumno, salida);
-        return resultados
-        
-    } catch (error) {
-        throw error;
-    }
-    
+    const alumno = await obtenerDatosAlumnoPorLU(LU)
+    const resultados = await generarTitulo(alumno, salida);
+    return resultados
 }
 
 export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
@@ -79,7 +69,4 @@ export async function generarTitulo(alumno: Alumno, carpetaSalida: string) {
         resultadoTitulo.error = ERRORES.FALLA_AL_GENERAR_CERTIFICADO
         return resultadoTitulo
     }
-    
-    
 }
-

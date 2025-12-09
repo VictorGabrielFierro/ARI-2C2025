@@ -4,7 +4,7 @@ checkToken();
 async function obtenerHistoria() {
     
     try {
-        const res = await fetch(`/api/v0/crud/aida.cursa/cursa/actualLU`, {
+        const res = await fetch(`/api/v0/crud/aida.cursa/actualLU`, {
             headers: getAuthHeaders()
         });
 
@@ -27,7 +27,7 @@ async function llenarTabla(cursadas: any[]) {
     const cursadasConDatos = await Promise.all(
         cursadas.map(async cur => {
             const res = await fetch(
-                `/api/v0/crud/aida.materias/materia/${encodeURIComponent(cur.MateriaId)}`,
+                `/api/v0/crud/aida.materias/${encodeURIComponent(cur.MateriaId)}`,
                 { headers: getAuthHeaders() }
             );
 
