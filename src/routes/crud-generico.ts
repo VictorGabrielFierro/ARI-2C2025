@@ -50,20 +50,19 @@ async function egresarAlumnoAutomaticamente(lu: string, pool: Pool) {
     }
 }
 
+async function obtenerParametros(req: any){
+    const tabla = req.params.tabla;
+    const userRole = req.user?.rol;
+    const pool = await obtenerPoolPorRol(userRole);
+    const meta = await obtenerMetadataTabla(tabla);
+    return {tabla, userRole, pool, meta}
+}
+
 
 // Obtener la tabla entera
 router.get("/:tabla", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
-        const tabla = req.params.tabla;
-        const userRole = req.user?.rol;
-        const pool = await obtenerPoolPorRol(userRole);
-        
-        if (!pool) return res.status(500).json({ error: "No hay conexión a BD disponible" });
-        if (!tabla) return res.status(400).json({ error: "Falta el nombre de la tabla" });
-
-        const meta = await obtenerMetadataTabla(tabla);
-        if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
-        //const pkNames = meta.pk.map(p => p.pk);
+        const {tabla, pool, meta} = await obtenerParametros(req)
         
         const query = buildSelectWithJoins(tabla, meta);
         const result = await pool.query(query); 
@@ -78,18 +77,13 @@ router.get("/:tabla", verificarTokenMiddleware, requireRole('administrador'), as
 // Obtener resultados filtrados de una tabla
 router.get("/:tabla/:id", verificarTokenMiddleware, async (req, res) => {
     try {
-        const tabla = req.params.tabla;
-        const pool = await obtenerPoolPorRol('administrador');
+        const {tabla, pool, meta} = await obtenerParametros(req)
         
         const idParts = req.params.id?.split("__").map(decodeURIComponent);
         if (idParts?.includes('actualLU')){
             idParts[0] = req.user?.lu ?? ''
         }
-        
-        if (!pool) return res.status(500).json({ error: "No hay conexión a BD" });
-        if (!tabla) return res.status(400).json({ error: "Falta tabla" });
 
-        const meta = await obtenerMetadataTabla(tabla);
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pkInfo = meta.pk;
 
@@ -120,29 +114,22 @@ router.get("/:tabla/:id", verificarTokenMiddleware, async (req, res) => {
 // Insertar un valor en la tabla
 router.post("/:tabla", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
-        const tabla = req.params.tabla;
-        const userRole = req.user?.rol;
-        const pool = await obtenerPoolPorRol(userRole);
+        const {tabla, pool, meta} = await obtenerParametros(req)
         const body = req.body;
 
-        if (!pool) return res.status(500).json({ error: "No hay conexión" });
-        if (!tabla) return res.status(400).json({ error: "Falta tabla" });
-
-        const meta = await obtenerMetadataTabla(tabla);
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
 
-        const columnasInsertables = meta.columns
-            .map(c => c.name);
+        const columnas = meta.columns.map(c => c.name);
 
         const values: (any)[] = [];
         const placeholders: string[] = [];
         
-        columnasInsertables.forEach((c, index) => {
+        columnas.forEach((c, index) => {
             values.push(body[c] ?? null);
             placeholders.push(`$${index + 1}`); 
         });
 
-        const insertQuery = buildInsertQuery(tabla, columnasInsertables);
+        const insertQuery = buildInsertQuery(tabla, columnas);
 
         await pool.query(insertQuery, values);
 
@@ -160,17 +147,11 @@ router.post("/:tabla", verificarTokenMiddleware, requireRole('administrador'), a
 // Actualizamos una entrada
 router.put("/:tabla/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
-        const tabla = req.params.tabla;
-        const userRole = req.user?.rol;
-        const pool = await obtenerPoolPorRol(userRole);
+        const {tabla, pool, meta} = await obtenerParametros(req)
         
         const idParts = req.params.id?.split('__').map(decodeURIComponent);
-        const body = req.body; 
+        const body = req.body;
 
-        if (!pool) return res.status(500).json({ error: "No hay conexión" });
-        if (!tabla) return res.status(400).json({ error: "Falta tabla" });
-
-        const meta = await obtenerMetadataTabla(tabla);
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pkNames = meta.pk.map(p => p.pk); 
 
@@ -225,16 +206,9 @@ router.put("/:tabla/:id", verificarTokenMiddleware, requireRole('administrador')
 // Eliminar una entrada
 router.delete("/:tabla/:id", verificarTokenMiddleware, requireRole('administrador'), async (req, res) => {
     try {
-        const tabla = req.params.tabla;
         const idParts = req.params.id?.split('__').map(decodeURIComponent);
+        const {tabla, pool, meta} = await obtenerParametros(req)
 
-        const userRole = req.user?.rol;
-        const pool = await obtenerPoolPorRol(userRole);
-
-        if (!pool) return res.status(500).json({ error: "No hay conexión" });
-        if (!tabla) return res.status(400).json({ error: "Falta tabla" });
-
-        const meta = await obtenerMetadataTabla(tabla);
         if(!meta) return res.status(501).json({error: "Error en el sistema, faltan los metadatos de la tabla a cargar"})
         const pk = meta.pk;
 
